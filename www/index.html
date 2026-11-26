@@ -185,6 +185,10 @@
       box-shadow: var(--shadow-sm);
     }
 
+    .main-tabs.ft-tt-mode {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
     .tab-btn {
       border: none;
       background: transparent;
@@ -812,6 +816,46 @@
       gap: 8px;
     }
 
+    .type-badge {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 6px;
+      vertical-align: middle;
+      margin-left: 4px;
+    }
+
+    .type-badge.mt {
+      background: var(--primary-soft);
+      color: var(--primary-text);
+    }
+
+    .type-badge.ft {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .type-badge.tt {
+      background: var(--warning-bg);
+      color: var(--warning-text);
+    }
+
+    .select-wrapper {
+      position: relative;
+    }
+
+    .select-wrapper::after {
+      content: "▼";
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
     /* ==========================================================================
        6. CUSTOM TOAST & CONFIRMATION MODAL (NO alert/confirm)
        ========================================================================== */
@@ -894,7 +938,7 @@
       <h1 class="app-title">Campaign Tally Sheet</h1>
       <div class="app-subtitle">
         <span class="status-dot" title="Offline Storage Active"></span>
-        <span>46-Col Operational &amp; TS Entry</span>
+        <span id="headerSubtitleText">47-Col MT / FT / TT Entry</span>
       </div>
     </div>
     <div class="header-actions">
@@ -908,9 +952,9 @@
   <!-- ========================================================================
        4-SECTION NAVIGATION BAR
        ======================================================================== -->
-  <nav class="main-tabs" role="tablist">
+  <nav class="main-tabs" id="mainTabsNav" role="tablist">
     <button type="button" class="tab-btn active" id="tab-btn-admin" onclick="switchMainTab('admin')">
-      <span class="tab-step">Step 1</span>
+      <span class="tab-step" id="step1SubLabel">Step 1</span>
       <span>Admin &amp; Team</span>
       <span class="tab-warn-dot"></span>
     </button>
@@ -935,18 +979,18 @@
        ======================================================================== -->
   <main class="container">
 
-    <!-- Editing Mode Banner -->
+    <!-- Edit Mode Banner -->
     <div class="edit-banner" id="editModeBanner">
       <div>
-        <strong>Editing Saved Record:</strong> <span id="editingTeamLabel">Team</span>
+        <strong>Editing Saved Entry:</strong> <span id="editingTeamLabel">Team</span>
       </div>
       <button type="button" class="btn btn-ghost btn-sm" onclick="cancelEditMode()">Cancel Edit</button>
     </div>
 
-    <form id="campaignForm" novalidate>
+    <form id="campaignForm" onsubmit="return false;">
 
       <!-- ====================================================================
-           SECTION 1: ADMIN & TEAM INFO (Columns 1 to 10)
+           SECTION 1: ADMIN HIERARCHY & TEAM DETAILS (Columns 1 to 11 + FT/TT)
            ==================================================================== -->
       <section class="section-panel active" id="panel-admin">
         
@@ -954,7 +998,7 @@
         <div class="toggle-row">
           <div class="toggle-label-group">
             <span class="toggle-title">Sticky Admin Context</span>
-            <span class="toggle-desc">Keep District, Tehsil, UC, UCMO &amp; AIC for next team</span>
+            <span class="toggle-desc">Keep District, Tehsil, UC, UCMO, AIC &amp; Team Type for next team</span>
           </div>
           <label class="switch" aria-label="Toggle Sticky Admin Context">
             <input type="checkbox" id="stickyAdminToggle" checked />
@@ -992,49 +1036,103 @@
           </div>
         </div>
 
-        <!-- Team & Member CNIC Details (Cols 6-10) -->
+        <!-- Team & Member CNIC Details (Cols 6-11) -->
         <div class="card">
           <div class="card-header">
             <h2 class="card-title">Team &amp; Member Details</h2>
-            <span class="col-badge">Cols 6–10</span>
+            <span class="col-badge" id="teamCardColBadge">Cols 6–11</span>
           </div>
           <div class="form-grid cols-2">
-            <div class="field-group" style="grid-column: 1 / -1;">
+            <div class="field-group">
               <label class="field-label" for="f_Team_No">6. Team # <span class="req">*</span></label>
               <input type="text" id="f_Team_No" class="field-input" placeholder="e.g. Team-01 or 104" autocomplete="off" />
             </div>
 
+            <div class="field-group">
+              <label class="field-label" for="f_Team_Type">7. Team Type <span class="req">*</span></label>
+              <div class="select-wrapper">
+                <select id="f_Team_Type" class="field-select" onchange="handleTeamTypeChange(this.value)">
+                  <option value="MT" selected>MT (Mobile Team)</option>
+                  <option value="FT">FT (Fixed Team)</option>
+                  <option value="TT">TT (Transit Team)</option>
+                </select>
+              </div>
+            </div>
+
             <!-- Team Member 1 -->
             <div class="field-group">
-              <label class="field-label" for="f_Name_TM1">7. Name Team Member 1</label>
+              <label class="field-label" for="f_Name_TM1">8. Name Team Member 1</label>
               <input type="text" id="f_Name_TM1" class="field-input" placeholder="Full Name" autocomplete="off" />
             </div>
             <div class="field-group">
-              <label class="field-label" for="f_CNIC_TM1">8. CNIC Team Member 1</label>
+              <label class="field-label" for="f_CNIC_TM1">9. CNIC Team Member 1</label>
               <input type="text" id="f_CNIC_TM1" class="field-input cnic-input" inputmode="numeric" maxlength="15" placeholder="XXXXX-XXXXXXX-X" autocomplete="off" />
               <span class="field-hint" id="hint_CNIC_TM1">13 digits auto-formatted</span>
             </div>
 
             <!-- Team Member 2 -->
             <div class="field-group">
-              <label class="field-label" for="f_Name_TM2">9. Name Team Member 2</label>
+              <label class="field-label" for="f_Name_TM2">10. Name Team Member 2</label>
               <input type="text" id="f_Name_TM2" class="field-input" placeholder="Full Name" autocomplete="off" />
             </div>
             <div class="field-group">
-              <label class="field-label" for="f_CNIC_TM2">10. CNIC Team Member 2</label>
+              <label class="field-label" for="f_CNIC_TM2">11. CNIC Team Member 2</label>
               <input type="text" id="f_CNIC_TM2" class="field-input cnic-input" inputmode="numeric" maxlength="15" placeholder="XXXXX-XXXXXXX-X" autocomplete="off" />
               <span class="field-hint" id="hint_CNIC_TM2">13 digits auto-formatted</span>
             </div>
           </div>
 
-          <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
+          <div id="mtNextStepBtnRow" style="margin-top: 14px; display: flex; justify-content: flex-end;">
             <button type="button" class="btn btn-secondary" onclick="switchMainTab('hh')">Next: HH &amp; MMP &rarr;</button>
+          </div>
+        </div>
+
+        <!-- FT / TT COVERAGE DAY 1-3 & CATCH-UP CARD (Shown ONLY when Team Type is FT or TT) -->
+        <div class="card" id="ftTtCoverageCard" style="display: none;">
+          <div class="card-header">
+            <h2 class="card-title">Fixed / Transit Team Coverage</h2>
+            <span class="col-badge" id="ftTtBadge">FT / TT</span>
+          </div>
+          <div class="grid-2-compact">
+            <div class="field-group">
+              <label class="field-label" for="f_FT_Cov_D1">Covered Day 1</label>
+              <input type="number" min="0" inputmode="numeric" id="f_FT_Cov_D1" class="field-input num-input calc-trigger" placeholder="0" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f_FT_Cov_D2">Covered Day 2</label>
+              <input type="number" min="0" inputmode="numeric" id="f_FT_Cov_D2" class="field-input num-input calc-trigger" placeholder="0" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f_FT_Cov_D3">Covered Day 3</label>
+              <input type="number" min="0" inputmode="numeric" id="f_FT_Cov_D3" class="field-input num-input calc-trigger" placeholder="0" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f_FT_Cov_CU1">Covered Catch-UP Day 1</label>
+              <input type="number" min="0" inputmode="numeric" id="f_FT_Cov_CU1" class="field-input num-input calc-trigger" placeholder="0" />
+            </div>
+          </div>
+
+          <div class="kpi-strip" style="grid-template-columns: repeat(2, 1fr);">
+            <div class="kpi-box">
+              <div class="kpi-label">Team Type</div>
+              <div class="kpi-val" id="kpi_fttt_type">FT</div>
+            </div>
+            <div class="kpi-box">
+              <div class="kpi-label">Total Covered (D1–3 + CU1)</div>
+              <div class="kpi-val" id="kpi_fttt_total">0</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
+            <button type="button" class="btn btn-primary" style="width: 100%;" onclick="saveRecord(true)">
+              &#10003; Save + Next Team
+            </button>
           </div>
         </div>
       </section>
 
       <!-- ====================================================================
-           SECTION 2: HOUSEHOLD (HH) & MMP DATA (Columns 11 to 23)
+           SECTION 2: HOUSEHOLD (HH) & MMP DATA (Columns 12 to 24)
            ==================================================================== -->
       <section class="section-panel" id="panel-hh">
         
@@ -1373,22 +1471,22 @@
           <div class="stat-card">
             <div class="stat-title">Teams Entered</div>
             <div class="stat-num" id="agg_teams">0</div>
-            <div class="stat-sub">Offline Saved</div>
+            <div class="stat-sub" id="agg_team_breakdown">0 MT • 0 FT • 0 TT</div>
           </div>
           <div class="stat-card">
             <div class="stat-title">HH Target / Rec</div>
             <div class="stat-num" id="agg_hh">0 / 0</div>
-            <div class="stat-sub" id="agg_hh_pct">0% HH Rec</div>
+            <div class="stat-sub" id="agg_hh_pct">0% HH Rec (MT)</div>
           </div>
           <div class="stat-card">
-            <div class="stat-title">Target D1–3</div>
+            <div class="stat-title">Target D1–3 (MT)</div>
             <div class="stat-num" id="agg_target">0</div>
             <div class="stat-sub">Children Target</div>
           </div>
           <div class="stat-card">
-            <div class="stat-title">Covered D1–3</div>
+            <div class="stat-title">Covered (All Teams)</div>
             <div class="stat-num" id="agg_covered">0</div>
-            <div class="stat-sub" id="agg_cov_pct">0% Coverage</div>
+            <div class="stat-sub" id="agg_cov_pct">0% MT Cov</div>
           </div>
           <div class="stat-card">
             <div class="stat-title">Total NA (D1–3)</div>
@@ -1406,21 +1504,24 @@
         <div class="card">
           <div class="card-header">
             <h2 class="card-title">Export to Phone Memory</h2>
-            <span class="col-badge">46 Exact Headers</span>
+            <span class="col-badge">2-Sheet Excel + CSV</span>
           </div>
           <div class="export-grid">
-            <button type="button" class="btn btn-primary" onclick="exportCSV()">
-              &#128229; Download CSV
+            <button type="button" class="btn btn-primary" onclick="exportExcelWorkbook()">
+              &#128202; Download Excel (2 Sheets)
             </button>
             <button type="button" class="btn btn-primary" style="background: #1d4ed8;" onclick="exportPDF()">
               &#128196; Download PDF
             </button>
-            <button type="button" class="btn btn-secondary btn-full" onclick="copyTSVToClipboard()">
-              &#128203; Copy for Excel (All 46 Headers)
+            <button type="button" class="btn btn-secondary" onclick="exportCSV()">
+              &#128229; Download CSV (2 Sections)
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="copyTSVToClipboard()">
+              &#128203; Copy for Excel
             </button>
           </div>
           <div style="font-size: 0.75rem; color: var(--text-muted);">
-            <strong>Phone Memory:</strong> CSV &amp; PDF files save directly to <code>Documents/CampaignTally/</code> (or Downloads folder in browser).
+            <strong>2-Sheet Output:</strong> Exports separate <code>Mobile Team Analysis</code> (MT) and <code>Fixed_Transit Data Entry</code> (FT/TT) sheets directly to <code>Documents/CampaignTally/</code> (or Downloads folder in browser).
           </div>
           <div class="saved-path-banner" id="savedPathBanner">
             <div style="min-width: 0; word-break: break-word;">
@@ -1482,8 +1583,9 @@
        ======================================================================== -->
   <script>
     /**
-     * EXACT 46 COLUMN HEADERS IN STRICT ORDER
-     * Matches user specification character-for-character.
+     * UNIFIED 47 COLUMN HEADERS IN STRICT ORDER
+     * No extra trailing columns: FT/TT rows populate the exact matching
+     * Covered Day 1, Covered Day 2, Covered Day 3, and Covered Catch-UP Day 1 columns.
      */
     const EXACT_HEADERS = [
       "District",
@@ -1492,6 +1594,7 @@
       "UCMO",
       "Area In-Charge",
       "Team #",
+      "Team Type",
       "Name Team Member 1",
       "CNIC Team Member 1",
       "Name Team Member 2",
@@ -1535,55 +1638,57 @@
     ];
 
     /**
-     * Ordered mapping from the 46 headers to DOM input IDs
+     * Ordered mapping from the 47 headers to DOM input IDs.
+     * Shared coverage fields define `ftId` so FT/TT inputs map into the exact same columns.
      */
     const FIELD_MAP = [
-      { header: "District", id: "f_District", type: "text", sticky: true },
-      { header: "Tehsil", id: "f_Tehsil", type: "text", sticky: true },
-      { header: "UC", id: "f_UC", type: "text", sticky: true },
-      { header: "UCMO", id: "f_UCMO", type: "text", sticky: true },
-      { header: "Area In-Charge", id: "f_Area_In_Charge", type: "text", sticky: true },
-      { header: "Team #", id: "f_Team_No", type: "text" },
-      { header: "Name Team Member 1", id: "f_Name_TM1", type: "text" },
-      { header: "CNIC Team Member 1", id: "f_CNIC_TM1", type: "cnic" },
-      { header: "Name Team Member 2", id: "f_Name_TM2", type: "text" },
-      { header: "CNIC Team Member 2", id: "f_CNIC_TM2", type: "cnic" },
-      { header: "HH Target (Operational Sheet)-Day 1", id: "f_HH_Target_D1", type: "num" },
-      { header: "HH Target (Operational Sheet)-Day 2", id: "f_HH_Target_D2", type: "num" },
-      { header: "HH Target (Operational Sheet)-Day 3", id: "f_HH_Target_D3", type: "num" },
-      { header: "HH Recorded (Tally Sheet)-Day 1", id: "f_HH_Rec_D1", type: "num" },
-      { header: "HH Recorded (Tally Sheet)-Day 2", id: "f_HH_Rec_D2", type: "num" },
-      { header: "HH Recorded (Tally Sheet)-Day 3", id: "f_HH_Rec_D3", type: "num" },
-      { header: "MMP (Y/N)", id: "f_MMP_YN", type: "yn" },
-      { header: "MMP Day 1", id: "f_MMP_D1", type: "num" },
-      { header: "MMP Covered Day 1", id: "f_MMP_Cov_D1", type: "num" },
-      { header: "MMP Day 2", id: "f_MMP_D2", type: "num" },
-      { header: "MMP Covered Day 2", id: "f_MMP_Cov_D2", type: "num" },
-      { header: "MMP Day 3", id: "f_MMP_D3", type: "num" },
-      { header: "MMP Covered Day 3", id: "f_MMP_Cov_D3", type: "num" },
-      { header: "Target Day 1", id: "f_Target_D1", type: "num" },
-      { header: "Covered Day 1", id: "f_Covered_D1", type: "num" },
-      { header: "NA Day 1", id: "f_NA_D1", type: "num" },
-      { header: "Same Day NA Coverage Day 1", id: "f_SameDay_NA_D1", type: "num" },
-      { header: "Covered in Catch UP-NA Day 1", id: "f_CatchUp_NA_D1", type: "num" },
-      { header: "Schools Coverage Day 1", id: "f_Schools_D1", type: "num" },
-      { header: "Zero Dose Children recorded on TS Day 1", id: "f_ZeroDose_D1", type: "num" },
-      { header: "Target Day 2", id: "f_Target_D2", type: "num" },
-      { header: "Covered Day 2", id: "f_Covered_D2", type: "num" },
-      { header: "NA Day 2", id: "f_NA_D2", type: "num" },
-      { header: "Same Day NA Coverage Day 2", id: "f_SameDay_NA_D2", type: "num" },
-      { header: "Covered in Catch UP-NA Day 2", id: "f_CatchUp_NA_D2", type: "num" },
-      { header: "Schools Coverage Day 2", id: "f_Schools_D2", type: "num" },
-      { header: "Zero Dose Children recorded on TS Day 2", id: "f_ZeroDose_D2", type: "num" },
-      { header: "Target Day 3", id: "f_Target_D3", type: "num" },
-      { header: "Covered Day 3", id: "f_Covered_D3", type: "num" },
-      { header: "NA Day 3", id: "f_NA_D3", type: "num" },
-      { header: "Same Day NA Coverage Day 3", id: "f_SameDay_NA_D3", type: "num" },
-      { header: "Covered in Catch UP-NA Day 3", id: "f_CatchUp_NA_D3", type: "num" },
-      { header: "Schools Coverage Day 3", id: "f_Schools_D3", type: "num" },
-      { header: "Zero Dose Children recorded on TS Day 3", id: "f_ZeroDose_D3", type: "num" },
-      { header: "Covered Catch-UP Day 1", id: "f_Covered_CU_D1", type: "num" },
-      { header: "Target Catch-UP Day 1", id: "f_Target_CU_D1", type: "num" }
+      { header: "District", id: "f_District", type: "text", sticky: true, scope: "common" },
+      { header: "Tehsil", id: "f_Tehsil", type: "text", sticky: true, scope: "common" },
+      { header: "UC", id: "f_UC", type: "text", sticky: true, scope: "common" },
+      { header: "UCMO", id: "f_UCMO", type: "text", sticky: true, scope: "common" },
+      { header: "Area In-Charge", id: "f_Area_In_Charge", type: "text", sticky: true, scope: "common" },
+      { header: "Team #", id: "f_Team_No", type: "text", scope: "common" },
+      { header: "Team Type", id: "f_Team_Type", type: "select", sticky: true, scope: "common" },
+      { header: "Name Team Member 1", id: "f_Name_TM1", type: "text", scope: "common" },
+      { header: "CNIC Team Member 1", id: "f_CNIC_TM1", type: "cnic", scope: "common" },
+      { header: "Name Team Member 2", id: "f_Name_TM2", type: "text", scope: "common" },
+      { header: "CNIC Team Member 2", id: "f_CNIC_TM2", type: "cnic", scope: "common" },
+      { header: "HH Target (Operational Sheet)-Day 1", id: "f_HH_Target_D1", type: "num", scope: "mt" },
+      { header: "HH Target (Operational Sheet)-Day 2", id: "f_HH_Target_D2", type: "num", scope: "mt" },
+      { header: "HH Target (Operational Sheet)-Day 3", id: "f_HH_Target_D3", type: "num", scope: "mt" },
+      { header: "HH Recorded (Tally Sheet)-Day 1", id: "f_HH_Rec_D1", type: "num", scope: "mt" },
+      { header: "HH Recorded (Tally Sheet)-Day 2", id: "f_HH_Rec_D2", type: "num", scope: "mt" },
+      { header: "HH Recorded (Tally Sheet)-Day 3", id: "f_HH_Rec_D3", type: "num", scope: "mt" },
+      { header: "MMP (Y/N)", id: "f_MMP_YN", type: "yn", scope: "mt" },
+      { header: "MMP Day 1", id: "f_MMP_D1", type: "num", scope: "mt" },
+      { header: "MMP Covered Day 1", id: "f_MMP_Cov_D1", type: "num", scope: "mt" },
+      { header: "MMP Day 2", id: "f_MMP_D2", type: "num", scope: "mt" },
+      { header: "MMP Covered Day 2", id: "f_MMP_Cov_D2", type: "num", scope: "mt" },
+      { header: "MMP Day 3", id: "f_MMP_D3", type: "num", scope: "mt" },
+      { header: "MMP Covered Day 3", id: "f_MMP_Cov_D3", type: "num", scope: "mt" },
+      { header: "Target Day 1", id: "f_Target_D1", type: "num", scope: "mt" },
+      { header: "Covered Day 1", id: "f_Covered_D1", ftId: "f_FT_Cov_D1", type: "num", scope: "shared_cov" },
+      { header: "NA Day 1", id: "f_NA_D1", type: "num", scope: "mt" },
+      { header: "Same Day NA Coverage Day 1", id: "f_SameDay_NA_D1", type: "num", scope: "mt" },
+      { header: "Covered in Catch UP-NA Day 1", id: "f_CatchUp_NA_D1", type: "num", scope: "mt" },
+      { header: "Schools Coverage Day 1", id: "f_Schools_D1", type: "num", scope: "mt" },
+      { header: "Zero Dose Children recorded on TS Day 1", id: "f_ZeroDose_D1", type: "num", scope: "mt" },
+      { header: "Target Day 2", id: "f_Target_D2", type: "num", scope: "mt" },
+      { header: "Covered Day 2", id: "f_Covered_D2", ftId: "f_FT_Cov_D2", type: "num", scope: "shared_cov" },
+      { header: "NA Day 2", id: "f_NA_D2", type: "num", scope: "mt" },
+      { header: "Same Day NA Coverage Day 2", id: "f_SameDay_NA_D2", type: "num", scope: "mt" },
+      { header: "Covered in Catch UP-NA Day 2", id: "f_CatchUp_NA_D2", type: "num", scope: "mt" },
+      { header: "Schools Coverage Day 2", id: "f_Schools_D2", type: "num", scope: "mt" },
+      { header: "Zero Dose Children recorded on TS Day 2", id: "f_ZeroDose_D2", type: "num", scope: "mt" },
+      { header: "Target Day 3", id: "f_Target_D3", type: "num", scope: "mt" },
+      { header: "Covered Day 3", id: "f_Covered_D3", ftId: "f_FT_Cov_D3", type: "num", scope: "shared_cov" },
+      { header: "NA Day 3", id: "f_NA_D3", type: "num", scope: "mt" },
+      { header: "Same Day NA Coverage Day 3", id: "f_SameDay_NA_D3", type: "num", scope: "mt" },
+      { header: "Covered in Catch UP-NA Day 3", id: "f_CatchUp_NA_D3", type: "num", scope: "mt" },
+      { header: "Schools Coverage Day 3", id: "f_Schools_D3", type: "num", scope: "mt" },
+      { header: "Zero Dose Children recorded on TS Day 3", id: "f_ZeroDose_D3", type: "num", scope: "mt" },
+      { header: "Covered Catch-UP Day 1", id: "f_Covered_CU_D1", ftId: "f_FT_Cov_CU1", type: "num", scope: "shared_cov" },
+      { header: "Target Catch-UP Day 1", id: "f_Target_CU_D1", type: "num", scope: "mt" }
     ];
 
     const STORAGE_KEY_RECORDS = "campaign_tally_records_v1";
@@ -1600,10 +1705,63 @@
     window.addEventListener("DOMContentLoaded", () => {
       loadFromStorage();
       bindEvents();
+      handleTeamTypeChange(document.getElementById("f_Team_Type").value || "MT", true);
       setMMPStatus(document.getElementById("f_MMP_YN").value || "N");
       runLiveCalculationsAndValidations();
       updateRecordsUI();
     });
+
+    /**
+     * Dynamically toggles UI sections, tabs, and fields between MT (Mobile Team)
+     * and FT/TT (Fixed/Transit Team).
+     */
+    function handleTeamTypeChange(teamType, skipSaveDraft) {
+      const normalized = ["MT", "FT", "TT"].includes(teamType) ? teamType : "MT";
+      const selectEl = document.getElementById("f_Team_Type");
+      if (selectEl.value !== normalized) {
+        selectEl.value = normalized;
+      }
+
+      const isMT = (normalized === "MT");
+      const navEl = document.getElementById("mainTabsNav");
+      const tabHH = document.getElementById("tab-btn-hh");
+      const tabCov = document.getElementById("tab-btn-coverage");
+      const mtNextBtn = document.getElementById("mtNextStepBtnRow");
+      const ftTtCard = document.getElementById("ftTtCoverageCard");
+      const step1Sub = document.getElementById("step1SubLabel");
+
+      if (isMT) {
+        navEl.classList.remove("ft-tt-mode");
+        tabHH.style.display = "flex";
+        tabCov.style.display = "flex";
+        mtNextBtn.style.display = "flex";
+        ftTtCard.style.display = "none";
+        step1Sub.textContent = "Step 1";
+      } else {
+        navEl.classList.add("ft-tt-mode");
+        tabHH.style.display = "none";
+        tabCov.style.display = "none";
+        mtNextBtn.style.display = "none";
+        ftTtCard.style.display = "block";
+        step1Sub.textContent = normalized + " Entry";
+
+        const labelText = normalized === "FT" ? "FT (Fixed Team)" : "TT (Transit Team)";
+        document.getElementById("ftTtBadge").textContent = labelText;
+        document.getElementById("kpi_fttt_type").textContent = normalized;
+
+        // If user was on an MT-only tab when switching to FT/TT, return to Admin & Team
+        const hhActive = document.getElementById("panel-hh").classList.contains("active");
+        const covActive = document.getElementById("panel-coverage").classList.contains("active");
+        if (hhActive || covActive) {
+          switchMainTab("admin");
+        }
+      }
+
+      runLiveCalculationsAndValidations();
+      if (!skipSaveDraft) {
+        saveDraft();
+      }
+    }
 
     function bindEvents() {
       // CNIC auto-formatting (XXXXX-XXXXXXX-X)
@@ -1728,6 +1886,21 @@
     }
 
     function runLiveCalculationsAndValidations() {
+      const teamType = document.getElementById("f_Team_Type").value || "MT";
+
+      // FT / TT Total Coverage (Covered Day 1-3 + Covered Catch-UP Day 1)
+      const ftCovTotal = getNum("f_FT_Cov_D1") + getNum("f_FT_Cov_D2") + getNum("f_FT_Cov_D3") + getNum("f_FT_Cov_CU1");
+      const kpiFtTotalEl = document.getElementById("kpi_fttt_total");
+      if (kpiFtTotalEl) {
+        kpiFtTotalEl.textContent = ftCovTotal.toLocaleString();
+      }
+
+      if (teamType !== "MT") {
+        document.getElementById("tab-btn-hh").classList.remove("has-warning");
+        document.getElementById("tab-btn-coverage").classList.remove("has-warning");
+        return;
+      }
+
       // 1. HH Totals & Coverage
       const hhT1 = getNum("f_HH_Target_D1");
       const hhT2 = getNum("f_HH_Target_D2");
@@ -1854,14 +2027,25 @@
        FORM DATA SERIALIZATION & PERSISTENCE (LOCALSTORAGE)
        ======================================================================== */
     function collectFormRecord() {
+      const teamType = document.getElementById("f_Team_Type").value || "MT";
+      const isMT = (teamType === "MT");
+
       const record = {
         _id: editingRecordId || ("rec_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6)),
         _updatedAt: new Date().toISOString()
       };
 
       FIELD_MAP.forEach(f => {
-        const el = document.getElementById(f.id);
+        // Leave MT-only columns blank for FT/TT rows so FT/TT sits directly under MT columns
+        if (f.scope === "mt" && !isMT) {
+          record[f.header] = "";
+          return;
+        }
+
+        const activeId = (!isMT && f.ftId) ? f.ftId : f.id;
+        const el = document.getElementById(activeId);
         if (!el) return;
+
         if (f.type === "num") {
           const val = el.value.trim();
           record[f.header] = val === "" ? 0 : Math.max(0, parseInt(val, 10) || 0);
@@ -1876,14 +2060,21 @@
     }
 
     function populateFormFromRecord(record) {
+      const recordTeamType = record["Team Type"] || "MT";
+      const isMT = (recordTeamType === "MT");
+      handleTeamTypeChange(recordTeamType, true);
+
       FIELD_MAP.forEach(f => {
-        const el = document.getElementById(f.id);
+        const activeId = (!isMT && f.ftId) ? f.ftId : f.id;
+        const el = document.getElementById(activeId);
         if (!el) return;
         const val = record[f.header];
-        if (f.type === "yn") {
+        if (f.id === "f_Team_Type") {
+          el.value = recordTeamType;
+        } else if (f.type === "yn") {
           setMMPStatus(val === "Y" ? "Y" : "N");
         } else if (f.type === "num") {
-          el.value = (val !== undefined && val !== null && val !== 0) ? val : (val === 0 ? "0" : "");
+          el.value = (val !== undefined && val !== null && val !== "" && val !== 0) ? val : (val === 0 ? "0" : "");
         } else {
           el.value = val || "";
         }
@@ -1947,17 +2138,23 @@
       }
 
       FIELD_MAP.forEach(f => {
-        const el = document.getElementById(f.id);
-        if (!el) return;
-        if (keepSticky && f.sticky) {
-          el.value = stickyValues[f.id] || "";
-        } else if (f.type === "yn") {
-          setMMPStatus("N");
-        } else {
-          el.value = "";
-        }
+        const targetIds = f.ftId ? [f.id, f.ftId] : [f.id];
+        targetIds.forEach(domId => {
+          const el = document.getElementById(domId);
+          if (!el) return;
+          if (keepSticky && f.sticky) {
+            el.value = stickyValues[f.id] || (f.id === "f_Team_Type" ? "MT" : "");
+          } else if (f.id === "f_Team_Type") {
+            el.value = "MT";
+          } else if (f.type === "yn") {
+            setMMPStatus("N");
+          } else {
+            el.value = "";
+          }
+        });
       });
 
+      handleTeamTypeChange(document.getElementById("f_Team_Type").value || "MT", true);
       formatCNICInput(document.getElementById("f_CNIC_TM1"));
       formatCNICInput(document.getElementById("f_CNIC_TM2"));
       switchDayPane("d1");
@@ -1971,6 +2168,10 @@
       FIELD_MAP.forEach(f => {
         const el = document.getElementById(f.id);
         if (el) draft[f.id] = el.value;
+        if (f.ftId) {
+          const ftEl = document.getElementById(f.ftId);
+          if (ftEl) draft[f.ftId] = ftEl.value;
+        }
       });
       localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(draft));
     }
@@ -1979,7 +2180,10 @@
       try {
         const rawRecords = localStorage.getItem(STORAGE_KEY_RECORDS);
         if (rawRecords) {
-          savedRecords = JSON.parse(rawRecords) || [];
+          savedRecords = (JSON.parse(rawRecords) || []).map(r => ({
+            "Team Type": "MT",
+            ...r
+          }));
         }
       } catch (e) {
         savedRecords = [];
@@ -2090,55 +2294,72 @@
       document.getElementById("headerRecordCount").textContent = count;
       document.getElementById("tabRecordCount").textContent = count;
 
-      // Aggregate totals across all saved teams
-      let sumHHT = 0, sumHHR = 0, sumTar = 0, sumCov = 0, sumNA = 0, sumNACov = 0, sumZD = 0, sumSch = 0;
+      // Aggregate totals across all saved teams (MT + FT + TT)
+      let countMT = 0, countFT = 0, countTT = 0;
+      let sumHHT = 0, sumHHR = 0, sumTar = 0, sumCovMT = 0, sumCovFTTT = 0, sumNA = 0, sumNACov = 0, sumZD = 0, sumSch = 0;
 
       savedRecords.forEach(r => {
-        sumHHT += (Number(r["HH Target (Operational Sheet)-Day 1"]) || 0) +
-                  (Number(r["HH Target (Operational Sheet)-Day 2"]) || 0) +
-                  (Number(r["HH Target (Operational Sheet)-Day 3"]) || 0);
+        const tType = r["Team Type"] || "MT";
+        if (tType === "FT") countFT++;
+        else if (tType === "TT") countTT++;
+        else countMT++;
 
-        sumHHR += (Number(r["HH Recorded (Tally Sheet)-Day 1"]) || 0) +
-                  (Number(r["HH Recorded (Tally Sheet)-Day 2"]) || 0) +
-                  (Number(r["HH Recorded (Tally Sheet)-Day 3"]) || 0);
+        if (tType === "MT") {
+          sumHHT += (Number(r["HH Target (Operational Sheet)-Day 1"]) || 0) +
+                    (Number(r["HH Target (Operational Sheet)-Day 2"]) || 0) +
+                    (Number(r["HH Target (Operational Sheet)-Day 3"]) || 0);
 
-        sumTar += (Number(r["Target Day 1"]) || 0) +
-                  (Number(r["Target Day 2"]) || 0) +
-                  (Number(r["Target Day 3"]) || 0);
+          sumHHR += (Number(r["HH Recorded (Tally Sheet)-Day 1"]) || 0) +
+                    (Number(r["HH Recorded (Tally Sheet)-Day 2"]) || 0) +
+                    (Number(r["HH Recorded (Tally Sheet)-Day 3"]) || 0);
 
-        sumCov += (Number(r["Covered Day 1"]) || 0) +
-                  (Number(r["Covered Day 2"]) || 0) +
-                  (Number(r["Covered Day 3"]) || 0);
+          sumTar += (Number(r["Target Day 1"]) || 0) +
+                    (Number(r["Target Day 2"]) || 0) +
+                    (Number(r["Target Day 3"]) || 0);
 
-        sumNA += (Number(r["NA Day 1"]) || 0) +
-                 (Number(r["NA Day 2"]) || 0) +
-                 (Number(r["NA Day 3"]) || 0);
+          sumCovMT += (Number(r["Covered Day 1"]) || 0) +
+                      (Number(r["Covered Day 2"]) || 0) +
+                      (Number(r["Covered Day 3"]) || 0);
 
-        sumNACov += (Number(r["Same Day NA Coverage Day 1"]) || 0) +
-                    (Number(r["Covered in Catch UP-NA Day 1"]) || 0) +
-                    (Number(r["Same Day NA Coverage Day 2"]) || 0) +
-                    (Number(r["Covered in Catch UP-NA Day 2"]) || 0) +
-                    (Number(r["Same Day NA Coverage Day 3"]) || 0) +
-                    (Number(r["Covered in Catch UP-NA Day 3"]) || 0);
+          sumNA += (Number(r["NA Day 1"]) || 0) +
+                   (Number(r["NA Day 2"]) || 0) +
+                   (Number(r["NA Day 3"]) || 0);
 
-        sumZD += (Number(r["Zero Dose Children recorded on TS Day 1"]) || 0) +
-                 (Number(r["Zero Dose Children recorded on TS Day 2"]) || 0) +
-                 (Number(r["Zero Dose Children recorded on TS Day 3"]) || 0);
+          sumNACov += (Number(r["Same Day NA Coverage Day 1"]) || 0) +
+                      (Number(r["Covered in Catch UP-NA Day 1"]) || 0) +
+                      (Number(r["Same Day NA Coverage Day 2"]) || 0) +
+                      (Number(r["Covered in Catch UP-NA Day 2"]) || 0) +
+                      (Number(r["Same Day NA Coverage Day 3"]) || 0) +
+                      (Number(r["Covered in Catch UP-NA Day 3"]) || 0);
 
-        sumSch += (Number(r["Schools Coverage Day 1"]) || 0) +
-                  (Number(r["Schools Coverage Day 2"]) || 0) +
-                  (Number(r["Schools Coverage Day 3"]) || 0);
+          sumZD += (Number(r["Zero Dose Children recorded on TS Day 1"]) || 0) +
+                   (Number(r["Zero Dose Children recorded on TS Day 2"]) || 0) +
+                   (Number(r["Zero Dose Children recorded on TS Day 3"]) || 0);
+
+          sumSch += (Number(r["Schools Coverage Day 1"]) || 0) +
+                    (Number(r["Schools Coverage Day 2"]) || 0) +
+                    (Number(r["Schools Coverage Day 3"]) || 0);
+        } else {
+          sumCovFTTT += (Number(r["Covered Day 1"]) || 0) +
+                        (Number(r["Covered Day 2"]) || 0) +
+                        (Number(r["Covered Day 3"]) || 0) +
+                        (Number(r["Covered Catch-UP Day 1"]) || 0);
+        }
       });
 
       const hhPct = sumHHT > 0 ? Math.round((sumHHR / sumHHT) * 100) : 0;
-      const covPct = sumTar > 0 ? Math.round((sumCov / sumTar) * 100) : 0;
+      const mtCovPct = sumTar > 0 ? Math.round((sumCovMT / sumTar) * 100) : 0;
+      const totalAllCov = sumCovMT + sumCovFTTT;
 
       document.getElementById("agg_teams").textContent = count;
+      document.getElementById("agg_team_breakdown").textContent = `${countMT} MT • ${countFT} FT • ${countTT} TT`;
       document.getElementById("agg_hh").textContent = `${sumHHT.toLocaleString()} / ${sumHHR.toLocaleString()}`;
-      document.getElementById("agg_hh_pct").textContent = `${hhPct}% HH Recorded`;
+      document.getElementById("agg_hh_pct").textContent = `${hhPct}% HH Rec (MT)`;
       document.getElementById("agg_target").textContent = sumTar.toLocaleString();
-      document.getElementById("agg_covered").textContent = sumCov.toLocaleString();
-      document.getElementById("agg_cov_pct").textContent = `${covPct}% Coverage`;
+      document.getElementById("agg_covered").textContent = totalAllCov.toLocaleString();
+      document.getElementById("agg_cov_pct").textContent = countFT + countTT > 0
+        ? `MT: ${sumCovMT} (${mtCovPct}%) | FT/TT: ${sumCovFTTT}`
+        : `${mtCovPct}% Coverage`;
       document.getElementById("agg_na").textContent = sumNA.toLocaleString();
       document.getElementById("agg_na_cov").textContent = `${sumNACov.toLocaleString()} NA Covered`;
       document.getElementById("agg_zd").textContent = sumZD.toLocaleString();
@@ -2155,6 +2376,7 @@
         if (!query) return true;
         return (
           (r["Team #"] || "").toLowerCase().includes(query) ||
+          (r["Team Type"] || "MT").toLowerCase().includes(query) ||
           (r["UC"] || "").toLowerCase().includes(query) ||
           (r["Area In-Charge"] || "").toLowerCase().includes(query) ||
           (r["District"] || "").toLowerCase().includes(query) ||
@@ -2164,12 +2386,45 @@
 
       if (filtered.length === 0) {
         container.innerHTML = `<div style="text-align:center; padding: 24px 12px; color: var(--text-muted); font-size: 0.9rem;">
-          ${savedRecords.length === 0 ? "No team entries saved yet. Fill out Steps 1–3 and tap Save." : "No matching records found."}
+          ${savedRecords.length === 0 ? "No team entries saved yet. Fill out the form and tap Save." : "No matching records found."}
         </div>`;
         return;
       }
 
       container.innerHTML = filtered.map(r => {
+        const tType = r["Team Type"] || "MT";
+        const badgeClass = tType.toLowerCase();
+
+        if (tType === "FT" || tType === "TT") {
+          const d1 = Number(r["Covered Day 1"]) || 0;
+          const d2 = Number(r["Covered Day 2"]) || 0;
+          const d3 = Number(r["Covered Day 3"]) || 0;
+          const cu1 = Number(r["Covered Catch-UP Day 1"]) || 0;
+          const tot = d1 + d2 + d3 + cu1;
+
+          return `
+            <div class="record-item">
+              <div class="record-top">
+                <div>
+                  <div class="record-team">${escapeHTML(r["Team #"])} <span class="type-badge ${badgeClass}">${escapeHTML(tType)}</span> <span style="font-weight:500; font-size:0.82rem; color:var(--text-muted);">• UC ${escapeHTML(r["UC"])}</span></div>
+                  <div class="record-meta">${escapeHTML(r["District"])} &rsaquo; ${escapeHTML(r["Tehsil"])} ${r["Area In-Charge"] ? `• AIC: ${escapeHTML(r["Area In-Charge"])}` : ""}</div>
+                </div>
+                <span class="col-badge">Total: ${tot}</span>
+              </div>
+              <div class="record-metrics">
+                <div><div style="color:var(--text-light);">Cov D1</div><strong>${d1}</strong></div>
+                <div><div style="color:var(--text-light);">Cov D2</div><strong>${d2}</strong></div>
+                <div><div style="color:var(--text-light);">Cov D3</div><strong>${d3}</strong></div>
+                <div><div style="color:var(--text-light);">Catch-UP 1</div><strong>${cu1}</strong></div>
+              </div>
+              <div class="record-actions">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="editRecord('${r._id}')">Edit</button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="confirmDeleteRecord('${r._id}')">Delete</button>
+              </div>
+            </div>
+          `;
+        }
+
         const t13 = (Number(r["Target Day 1"]) || 0) + (Number(r["Target Day 2"]) || 0) + (Number(r["Target Day 3"]) || 0);
         const c13 = (Number(r["Covered Day 1"]) || 0) + (Number(r["Covered Day 2"]) || 0) + (Number(r["Covered Day 3"]) || 0);
         const na13 = (Number(r["NA Day 1"]) || 0) + (Number(r["NA Day 2"]) || 0) + (Number(r["NA Day 3"]) || 0);
@@ -2180,7 +2435,7 @@
           <div class="record-item">
             <div class="record-top">
               <div>
-                <div class="record-team">${escapeHTML(r["Team #"])} <span style="font-weight:500; font-size:0.82rem; color:var(--text-muted);">• UC ${escapeHTML(r["UC"])}</span></div>
+                <div class="record-team">${escapeHTML(r["Team #"])} <span class="type-badge mt">MT</span> <span style="font-weight:500; font-size:0.82rem; color:var(--text-muted);">• UC ${escapeHTML(r["UC"])}</span></div>
                 <div class="record-meta">${escapeHTML(r["District"])} &rsaquo; ${escapeHTML(r["Tehsil"])} ${r["Area In-Charge"] ? `• AIC: ${escapeHTML(r["Area In-Charge"])}` : ""}</div>
               </div>
               <span class="col-badge">${pct}% Cov</span>
@@ -2327,18 +2582,67 @@
       showSavedPathConfirmation(`Downloads/${fileName}`, null, fileName);
     }
 
+    const FT_TT_HEADERS = [
+      "District",
+      "Tehsil",
+      "UC",
+      "UCMO",
+      "Area In-Charge",
+      "Team #",
+      "Team Type",
+      "Name Team Member 1",
+      "CNIC Team Member 1",
+      "Name Team Member 2",
+      "CNIC Team Member 2",
+      "Covered Day 1",
+      "Covered Day 2",
+      "Covered Day 3",
+      "Covered Catch-UP Day 1"
+    ];
+
+    function getSplitRecords() {
+      const ordered = [...savedRecords].reverse();
+      const mtRecords = ordered.filter(r => (r["Team Type"] || "MT") === "MT");
+      const ftTtRecords = ordered.filter(r => {
+        const t = r["Team Type"] || "MT";
+        return t === "FT" || t === "TT";
+      });
+      return { mtRecords, ftTtRecords };
+    }
+
+    /**
+     * Generates a single CSV file containing two labeled sections:
+     * 1) "Mobile Team Analysis" (MT records with all 47 columns)
+     * 2) "Fixed_Transit Data Entry" (FT & TT records with their 15 relevant columns)
+     * Note: Standard CSV files only support a single flat grid; for native multi-tab
+     * Excel sheets, use exportExcelWorkbook() (.xlsx).
+     */
     async function exportCSV() {
       if (savedRecords.length === 0) {
         showToast("No saved records to export.");
         return;
       }
 
-      const ordered = [...savedRecords].reverse();
+      const { mtRecords, ftTtRecords } = getSplitRecords();
       const lines = [];
-      lines.push(EXACT_HEADERS.map(escapeCSVCell).join(","));
 
-      ordered.forEach(rec => {
+      // Sheet / Section 1: Mobile Team Analysis
+      lines.push(escapeCSVCell("Mobile Team Analysis"));
+      lines.push(EXACT_HEADERS.map(escapeCSVCell).join(","));
+      mtRecords.forEach(rec => {
         const row = EXACT_HEADERS.map(h => escapeCSVCell(rec[h] !== undefined ? rec[h] : ""));
+        lines.push(row.join(","));
+      });
+
+      // Blank separator rows between sections
+      lines.push("");
+      lines.push("");
+
+      // Sheet / Section 2: Fixed_Transit Data Entry
+      lines.push(escapeCSVCell("Fixed_Transit Data Entry"));
+      lines.push(FT_TT_HEADERS.map(escapeCSVCell).join(","));
+      ftTtRecords.forEach(rec => {
+        const row = FT_TT_HEADERS.map(h => escapeCSVCell(rec[h] !== undefined ? rec[h] : ""));
         lines.push(row.join(","));
       });
 
@@ -2351,6 +2655,256 @@
       const fileName = `Campaign_Tally_Data_${dateStr}.csv`;
 
       await saveFileNativeOrWeb(uint8Bytes, fileName, "text/csv;charset=utf-8;");
+    }
+
+    /* ========================================================================
+       ZERO-DEPENDENCY PURE-JS MULTI-SHEET .XLSX (OOXML ZIP) GENERATOR
+       Creates a real multi-tab Excel workbook with two worksheets:
+       1. "Mobile Team Analysis" (MT data only)
+       2. "Fixed_Transit Data Entry" (FT & TT data only)
+       ======================================================================== */
+    function escapeXML(val) {
+      return String(val === undefined || val === null ? "" : val)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
+    }
+
+    function colIndexToLetter(idx) {
+      let col = "";
+      let n = idx + 1;
+      while (n > 0) {
+        const rem = (n - 1) % 26;
+        col = String.fromCharCode(65 + rem) + col;
+        n = Math.floor((n - 1) / 26);
+      }
+      return col;
+    }
+
+    function buildWorksheetXML(headers, rows) {
+      const sheetRows = [];
+
+      // Header row (Row 1, style s="1")
+      const headerCells = headers.map((h, cIdx) => {
+        const ref = `${colIndexToLetter(cIdx)}1`;
+        return `<c r="${ref}" t="inlineStr" s="1"><is><t>${escapeXML(h)}</t></is></c>`;
+      }).join("");
+      sheetRows.push(`<row r="1" ht="24" customHeight="1">${headerCells}</row>`);
+
+      // Data rows (Row 2+)
+      rows.forEach((rec, rIdx) => {
+        const rowNum = rIdx + 2;
+        const cells = headers.map((h, cIdx) => {
+          const ref = `${colIndexToLetter(cIdx)}${rowNum}`;
+          const val = rec[h];
+          if (typeof val === "number" && !isNaN(val)) {
+            return `<c r="${ref}" s="2"><v>${val}</v></c>`;
+          }
+          const strVal = (val !== undefined && val !== null) ? String(val) : "";
+          return `<c r="${ref}" t="inlineStr" s="2"><is><t>${escapeXML(strVal)}</t></is></c>`;
+        }).join("");
+        sheetRows.push(`<row r="${rowNum}">${cells}</row>`);
+      });
+
+      const lastCol = colIndexToLetter(Math.max(0, headers.length - 1));
+      const lastRow = Math.max(1, rows.length + 1);
+      const colsXML = headers.map((h, i) => {
+        const width = Math.min(34, Math.max(13, h.length + 4));
+        return `<col min="${i + 1}" max="${i + 1}" width="${width}" customWidth="1"/>`;
+      }).join("");
+
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+        `<dimension ref="A1:${lastCol}${lastRow}"/>` +
+        `<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>` +
+        `<sheetFormatPr defaultRowHeight="18"/>` +
+        `<cols>${colsXML}</cols>` +
+        `<sheetData>${sheetRows.join("")}</sheetData>` +
+        `</worksheet>`;
+    }
+
+    // Standard CRC32 table for ZIP archive generation
+    const CRC32_TABLE = (() => {
+      const table = new Uint32Array(256);
+      for (let i = 0; i < 256; i++) {
+        let c = i;
+        for (let k = 0; k < 8; k++) {
+          c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        }
+        table[i] = c >>> 0;
+      }
+      return table;
+    })();
+
+    function computeCRC32(bytes) {
+      let crc = 0xFFFFFFFF;
+      for (let i = 0; i < bytes.length; i++) {
+        crc = CRC32_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+      }
+      return (crc ^ 0xFFFFFFFF) >>> 0;
+    }
+
+    function createStoreZip(files) {
+      const encoder = new TextEncoder();
+      const localParts = [];
+      const centralParts = [];
+      let offset = 0;
+
+      files.forEach(file => {
+        const nameBytes = encoder.encode(file.name);
+        const dataBytes = (file.data instanceof Uint8Array) ? file.data : encoder.encode(file.data);
+        const crc = computeCRC32(dataBytes);
+        const size = dataBytes.length;
+
+        // Local file header (30 bytes + name)
+        const localHeader = new Uint8Array(30 + nameBytes.length);
+        const lv = new DataView(localHeader.buffer);
+        lv.setUint32(0, 0x04034b50, true); // signature
+        lv.setUint16(4, 20, true);         // version needed
+        lv.setUint16(6, 0x0800, true);     // UTF-8 filename flag
+        lv.setUint16(8, 0, true);          // compression: STORE (0)
+        lv.setUint16(10, 0, true);         // mod time
+        lv.setUint16(12, 0x0021, true);    // mod date
+        lv.setUint32(14, crc, true);
+        lv.setUint32(18, size, true);
+        lv.setUint32(22, size, true);
+        lv.setUint16(26, nameBytes.length, true);
+        lv.setUint16(28, 0, true);
+        localHeader.set(nameBytes, 30);
+
+        localParts.push(localHeader, dataBytes);
+
+        // Central directory header (46 bytes + name)
+        const centralHeader = new Uint8Array(46 + nameBytes.length);
+        const cv = new DataView(centralHeader.buffer);
+        cv.setUint32(0, 0x02014b50, true); // signature
+        cv.setUint16(4, 20, true);         // version made by
+        cv.setUint16(6, 20, true);         // version needed
+        cv.setUint16(8, 0x0800, true);     // UTF-8 filename flag
+        cv.setUint16(10, 0, true);         // compression: STORE
+        cv.setUint16(12, 0, true);
+        cv.setUint16(14, 0x0021, true);
+        cv.setUint32(16, crc, true);
+        cv.setUint32(20, size, true);
+        cv.setUint32(24, size, true);
+        cv.setUint16(28, nameBytes.length, true);
+        cv.setUint16(30, 0, true);
+        cv.setUint16(32, 0, true);
+        cv.setUint16(34, 0, true);
+        cv.setUint16(36, 0, true);
+        cv.setUint32(38, 0, true);
+        cv.setUint32(42, offset, true);
+        centralHeader.set(nameBytes, 46);
+
+        centralParts.push(centralHeader);
+        offset += localHeader.length + dataBytes.length;
+      });
+
+      const centralDirSize = centralParts.reduce((sum, p) => sum + p.length, 0);
+      const eocd = new Uint8Array(22);
+      const ev = new DataView(eocd.buffer);
+      ev.setUint32(0, 0x06054b50, true);
+      ev.setUint16(4, 0, true);
+      ev.setUint16(6, 0, true);
+      ev.setUint16(8, files.length, true);
+      ev.setUint16(10, files.length, true);
+      ev.setUint32(12, centralDirSize, true);
+      ev.setUint32(16, offset, true);
+      ev.setUint16(20, 0, true);
+
+      const totalLength = offset + centralDirSize + eocd.length;
+      const out = new Uint8Array(totalLength);
+      let pos = 0;
+      localParts.forEach(p => { out.set(p, pos); pos += p.length; });
+      centralParts.forEach(p => { out.set(p, pos); pos += p.length; });
+      out.set(eocd, pos);
+      return out;
+    }
+
+    async function exportExcelWorkbook() {
+      if (savedRecords.length === 0) {
+        showToast("No saved records to export.");
+        return;
+      }
+
+      const { mtRecords, ftTtRecords } = getSplitRecords();
+
+      const sheet1XML = buildWorksheetXML(EXACT_HEADERS, mtRecords);
+      const sheet2XML = buildWorksheetXML(FT_TT_HEADERS, ftTtRecords);
+
+      const contentTypesXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
+        `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>` +
+        `<Default Extension="xml" ContentType="application/xml"/>` +
+        `<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>` +
+        `<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>` +
+        `<Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>` +
+        `<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>` +
+        `</Types>`;
+
+      const rootRelsXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>` +
+        `</Relationships>`;
+
+      const workbookXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+        `<sheets>` +
+        `<sheet name="Mobile Team Analysis" sheetId="1" r:id="rId1"/>` +
+        `<sheet name="Fixed_Transit Data Entry" sheetId="2" r:id="rId2"/>` +
+        `</sheets>` +
+        `</workbook>`;
+
+      const workbookRelsXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>` +
+        `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>` +
+        `<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>` +
+        `</Relationships>`;
+
+      const stylesXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+        `<fonts count="2">` +
+        `<font><sz val="10"/><name val="Calibri"/></font>` +
+        `<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>` +
+        `</fonts>` +
+        `<fills count="3">` +
+        `<fill><patternFill patternType="none"/></fill>` +
+        `<fill><patternFill patternType="gray125"/></fill>` +
+        `<fill><patternFill patternType="solid"><fgColor rgb="FF0F766E"/><bgColor indexed="64"/></patternFill></fill>` +
+        `</fills>` +
+        `<borders count="2">` +
+        `<border><left/><right/><top/><bottom/><diagonal/></border>` +
+        `<border><left style="thin"><color rgb="FFCBD5E1"/></left><right style="thin"><color rgb="FFCBD5E1"/></right><top style="thin"><color rgb="FFCBD5E1"/></top><bottom style="thin"><color rgb="FFCBD5E1"/></bottom><diagonal/></border>` +
+        `</borders>` +
+        `<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>` +
+        `<cellXfs count="3">` +
+        `<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>` +
+        `<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" alignment="center"/>` +
+        `<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"/>` +
+        `</cellXfs>` +
+        `</styleSheet>`;
+
+      const xlsxBytes = createStoreZip([
+        { name: "[Content_Types].xml", data: contentTypesXML },
+        { name: "_rels/.rels", data: rootRelsXML },
+        { name: "xl/workbook.xml", data: workbookXML },
+        { name: "xl/_rels/workbook.xml.rels", data: workbookRelsXML },
+        { name: "xl/styles.xml", data: stylesXML },
+        { name: "xl/worksheets/sheet1.xml", data: sheet1XML },
+        { name: "xl/worksheets/sheet2.xml", data: sheet2XML }
+      ]);
+
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const fileName = `Campaign_Tally_Data_${dateStr}.xlsx`;
+
+      await saveFileNativeOrWeb(
+        xlsxBytes,
+        fileName,
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
     }
 
     /**
@@ -2387,76 +2941,78 @@
       const margin = 24;
       const usableW = pageW - margin * 2; // 794 pt
 
-      // Part A columns (Cols 1-23: Admin, Team, CNICs, HH Target/Rec, MMP)
+      // Part A columns (All Teams: Admin, Team #, Type, Members, CNICs, HH Target/Rec, MMP)
       const colsPartA = [
-        { h: "District", label: "District", w: 46 },
-        { h: "Tehsil", label: "Tehsil", w: 44 },
-        { h: "UC", label: "UC", w: 38 },
-        { h: "UCMO", label: "UCMO", w: 44 },
-        { h: "Area In-Charge", label: "AIC", w: 46 },
-        { h: "Team #", label: "Team#", w: 36 },
-        { h: "Name Team Member 1", label: "Member 1", w: 54 },
-        { h: "CNIC Team Member 1", label: "CNIC 1", w: 62 },
-        { h: "Name Team Member 2", label: "Member 2", w: 54 },
-        { h: "CNIC Team Member 2", label: "CNIC 2", w: 62 },
+        { h: "District", label: "District", w: 43 },
+        { h: "Tehsil", label: "Tehsil", w: 41 },
+        { h: "UC", label: "UC", w: 36 },
+        { h: "UCMO", label: "UCMO", w: 41 },
+        { h: "Area In-Charge", label: "AIC", w: 43 },
+        { h: "Team #", label: "Team#", w: 35 },
+        { h: "Team Type", label: "Type", w: 24 },
+        { h: "Name Team Member 1", label: "Member 1", w: 50 },
+        { h: "CNIC Team Member 1", label: "CNIC 1", w: 59 },
+        { h: "Name Team Member 2", label: "Member 2", w: 50 },
+        { h: "CNIC Team Member 2", label: "CNIC 2", w: 59 },
         { h: "HH Target (Operational Sheet)-Day 1", label: "HHT1", w: 23 },
         { h: "HH Target (Operational Sheet)-Day 2", label: "HHT2", w: 23 },
         { h: "HH Target (Operational Sheet)-Day 3", label: "HHT3", w: 23 },
         { h: "HH Recorded (Tally Sheet)-Day 1", label: "HHR1", w: 23 },
         { h: "HH Recorded (Tally Sheet)-Day 2", label: "HHR2", w: 23 },
         { h: "HH Recorded (Tally Sheet)-Day 3", label: "HHR3", w: 23 },
-        { h: "MMP (Y/N)", label: "MMP", w: 22 },
-        { h: "MMP Day 1", label: "MD1", w: 24 },
-        { h: "MMP Covered Day 1", label: "MC1", w: 24 },
-        { h: "MMP Day 2", label: "MD2", w: 24 },
-        { h: "MMP Covered Day 2", label: "MC2", w: 24 },
-        { h: "MMP Day 3", label: "MD3", w: 24 },
-        { h: "MMP Covered Day 3", label: "MC3", w: 28 }
+        { h: "MMP (Y/N)", label: "MMP", w: 21 },
+        { h: "MMP Day 1", label: "MD1", w: 23 },
+        { h: "MMP Covered Day 1", label: "MC1", w: 23 },
+        { h: "MMP Day 2", label: "MD2", w: 23 },
+        { h: "MMP Covered Day 2", label: "MC2", w: 23 },
+        { h: "MMP Day 3", label: "MD3", w: 23 },
+        { h: "MMP Covered Day 3", label: "MC3", w: 39 }
       ];
 
-      // Part B columns (Team # reference + Cols 24-46: Day 1, Day 2, Day 3 & Catch-Up)
+      // Part B columns (All Teams: Team #, Type, Day 1-3 & Catch-Up — FT/TT rows align directly under MT columns)
       const colsPartB = [
-        { h: "Team #", label: "Team#", w: 46 },
-        { h: "Target Day 1", label: "T-D1", w: 31 },
-        { h: "Covered Day 1", label: "C-D1", w: 31 },
-        { h: "NA Day 1", label: "NA1", w: 28 },
-        { h: "Same Day NA Coverage Day 1", label: "SD1", w: 28 },
-        { h: "Covered in Catch UP-NA Day 1", label: "CU-NA1", w: 33 },
-        { h: "Schools Coverage Day 1", label: "Sch1", w: 30 },
-        { h: "Zero Dose Children recorded on TS Day 1", label: "ZD1", w: 28 },
-        { h: "Target Day 2", label: "T-D2", w: 31 },
-        { h: "Covered Day 2", label: "C-D2", w: 31 },
-        { h: "NA Day 2", label: "NA2", w: 28 },
-        { h: "Same Day NA Coverage Day 2", label: "SD2", w: 28 },
-        { h: "Covered in Catch UP-NA Day 2", label: "CU-NA2", w: 33 },
-        { h: "Schools Coverage Day 2", label: "Sch2", w: 30 },
-        { h: "Zero Dose Children recorded on TS Day 2", label: "ZD2", w: 28 },
-        { h: "Target Day 3", label: "T-D3", w: 31 },
-        { h: "Covered Day 3", label: "C-D3", w: 31 },
-        { h: "NA Day 3", label: "NA3", w: 28 },
-        { h: "Same Day NA Coverage Day 3", label: "SD3", w: 28 },
-        { h: "Covered in Catch UP-NA Day 3", label: "CU-NA3", w: 33 },
-        { h: "Schools Coverage Day 3", label: "Sch3", w: 30 },
-        { h: "Zero Dose Children recorded on TS Day 3", label: "ZD3", w: 28 },
-        { h: "Covered Catch-UP Day 1", label: "CovCU1", w: 39 },
-        { h: "Target Catch-UP Day 1", label: "TarCU1", w: 42 }
+        { h: "Team #", label: "Team#", w: 38 },
+        { h: "Team Type", label: "Type", w: 22 },
+        { h: "Target Day 1", label: "T-D1", w: 30 },
+        { h: "Covered Day 1", label: "C-D1", w: 30 },
+        { h: "NA Day 1", label: "NA1", w: 27 },
+        { h: "Same Day NA Coverage Day 1", label: "SD1", w: 27 },
+        { h: "Covered in Catch UP-NA Day 1", label: "CU-NA1", w: 32 },
+        { h: "Schools Coverage Day 1", label: "Sch1", w: 29 },
+        { h: "Zero Dose Children recorded on TS Day 1", label: "ZD1", w: 27 },
+        { h: "Target Day 2", label: "T-D2", w: 30 },
+        { h: "Covered Day 2", label: "C-D2", w: 30 },
+        { h: "NA Day 2", label: "NA2", w: 27 },
+        { h: "Same Day NA Coverage Day 2", label: "SD2", w: 27 },
+        { h: "Covered in Catch UP-NA Day 2", label: "CU-NA2", w: 32 },
+        { h: "Schools Coverage Day 2", label: "Sch2", w: 29 },
+        { h: "Zero Dose Children recorded on TS Day 2", label: "ZD2", w: 27 },
+        { h: "Target Day 3", label: "T-D3", w: 30 },
+        { h: "Covered Day 3", label: "C-D3", w: 30 },
+        { h: "NA Day 3", label: "NA3", w: 27 },
+        { h: "Same Day NA Coverage Day 3", label: "SD3", w: 27 },
+        { h: "Covered in Catch UP-NA Day 3", label: "CU-NA3", w: 32 },
+        { h: "Schools Coverage Day 3", label: "Sch3", w: 29 },
+        { h: "Zero Dose Children recorded on TS Day 3", label: "ZD3", w: 27 },
+        { h: "Covered Catch-UP Day 1", label: "CovCU1", w: 38 },
+        { h: "Target Catch-UP Day 1", label: "TarCU1", w: 40 }
       ];
 
-      // Compute aggregate totals row
-      const totalsRow = { "District": "TOTAL", "Team #": `${records.length} Teams` };
-      EXACT_HEADERS.forEach(h => {
-        if (typeof records[0][h] === "number") {
-          totalsRow[h] = records.reduce((acc, r) => acc + (Number(r[h]) || 0), 0);
-        }
-      });
-
-      const rowsWithTotals = [...records, totalsRow];
       const rowsPerPage = 22;
       const pagesContent = [];
 
-      function renderTablePages(colsSpec, sectionTitle) {
-        for (let start = 0; start < rowsWithTotals.length; start += rowsPerPage) {
-          const slice = rowsWithTotals.slice(start, start + rowsPerPage);
+      const totalsRow = { "District": "TOTAL", "Team #": `${records.length} Teams` };
+      EXACT_HEADERS.forEach(h => {
+        const hasNum = records.some(r => typeof r[h] === "number");
+        if (hasNum) {
+          totalsRow[h] = records.reduce((acc, r) => acc + (Number(r[h]) || 0), 0);
+        }
+      });
+      const allRowsWithTotals = [...records, totalsRow];
+
+      function renderTablePages(rowsData, colsSpec, sectionTitle) {
+        for (let start = 0; start < rowsData.length; start += rowsPerPage) {
+          const slice = rowsData.slice(start, start + rowsPerPage);
           const ops = [];
 
           // Header Banner
@@ -2464,9 +3020,9 @@
           ops.push(`${margin} ${pageH - 46} ${usableW} 24 re f`);
           ops.push("1 1 1 rg");
           ops.push("BT /F2 11 Tf");
-          ops.push(`${margin + 8} ${pageH - 38} Td (${pdfEscapeText("CAMPAIGN TALLY & OPERATIONAL REPORT - " + sectionTitle)}) Tj ET`);
+          ops.push(`${margin + 8} ${pageH - 38} Td (${pdfEscapeText("CAMPAIGN TALLY REPORT - " + sectionTitle)}) Tj ET`);
           ops.push("BT /F1 8.5 Tf");
-          ops.push(`${pageW - margin - 165} ${pageH - 38} Td (${pdfEscapeText("Date: " + dateStr + " | Teams: " + records.length)}) Tj ET`);
+          ops.push(`${pageW - margin - 175} ${pageH - 38} Td (${pdfEscapeText("Date: " + dateStr + " | Total Teams: " + records.length)}) Tj ET`);
 
           // Table Column Header Row
           let y = pageH - 66;
@@ -2487,7 +3043,7 @@
           // Data Rows
           slice.forEach((rec, idx) => {
             y -= rowH;
-            const isTotalRow = (start + idx === rowsWithTotals.length - 1);
+            const isTotalRow = (start + idx === rowsData.length - 1);
 
             if (isTotalRow) {
               ops.push("0.80 0.98 0.94 rg");
@@ -2517,13 +3073,13 @@
 
           // Footer
           ops.push("0.4 0.45 0.5 rg");
-          ops.push(`BT /F1 7.5 Tf ${margin} 14 Td (${pdfEscapeText("Generated Offline by Campaign Tally App | Exact 46-Column Schema")}) Tj ET`);
+          ops.push(`BT /F1 7.5 Tf ${margin} 14 Td (${pdfEscapeText("Generated Offline by Campaign Tally App | Unified 47-Column Schema (MT / FT / TT)")}) Tj ET`);
           pagesContent.push(ops.join("\n"));
         }
       }
 
-      renderTablePages(colsPartA, "PART 1: ADMIN, TEAM, HH & MMP (COLS 1-23)");
-      renderTablePages(colsPartB, "PART 2: DAY 1-3 & CATCH-UP COVERAGE (COLS 24-46)");
+      renderTablePages(allRowsWithTotals, colsPartA, "PART 1: ADMIN, TEAM, HH & MMP");
+      renderTablePages(allRowsWithTotals, colsPartB, "PART 2: DAY 1-3 & CATCH-UP COVERAGE (MT / FT / TT)");
 
       // Assemble valid PDF 1.4 byte structure
       const objects = [];
