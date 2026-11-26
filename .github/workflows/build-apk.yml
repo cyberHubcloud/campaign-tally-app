@@ -32,9 +32,9 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: Enable cleartext & storage permissions in AndroidManifest
+      - name: Configure Android permissions & FileProvider for CSV/PDF export
         run: |
-          sed -i 's/<application/<application android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
+          sed -i 's/<application/<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" \/>\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" \/>\n    <application android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
 
       - name: Build Debug APK with Gradle
         run: |
