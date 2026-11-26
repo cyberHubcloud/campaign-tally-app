@@ -1,0 +1,9 @@
+{
+  "appId": "org.rajanpur.campaigntally",
+  "appName": "Campaign Tally Entry",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": true
+  }
+}

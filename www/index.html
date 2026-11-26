@@ -1,0 +1,2361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f766e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Campaign Tally & Operational Data Entry</title>
+  <style>
+    /* ==========================================================================
+       1. DESIGN TOKENS & ZERO-DEPENDENCY SYSTEM RESET (OFFLINE / APK READY)
+       ========================================================================== */
+    :root {
+      --bg-app: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-subtle: #f8fafc;
+      --bg-input: #ffffff;
+      --border-color: #cbd5e1;
+      --border-focus: #0d9488;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-light: #64748b;
+      --primary: #0f766e;
+      --primary-hover: #115e59;
+      --primary-soft: #ccfbf1;
+      --primary-text: #134e4a;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+      --warning-bg: #fef3c7;
+      --warning-border: #f59e0b;
+      --warning-text: #92400e;
+      --danger: #dc2626;
+      --danger-soft: #fee2e2;
+      --success: #16a34a;
+      --success-soft: #dcfce7;
+      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --header-height: 60px;
+      --bottom-nav-height: 72px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-app: #0b1120;
+        --bg-card: #1e293b;
+        --bg-subtle: #0f172a;
+        --bg-input: #0f172a;
+        --border-color: #334155;
+        --border-focus: #2dd4bf;
+        --text-main: #f8fafc;
+        --text-muted: #cbd5e1;
+        --text-light: #94a3b8;
+        --primary: #0d9488;
+        --primary-hover: #14b8a6;
+        --primary-soft: #134e4a;
+        --primary-text: #99f6e4;
+        --accent: #3b82f6;
+        --accent-soft: #1e3a8a;
+        --warning-bg: #451a03;
+        --warning-border: #d97706;
+        --warning-text: #fde68a;
+        --danger: #ef4444;
+        --danger-soft: #450a0a;
+        --success: #22c55e;
+        --success-soft: #052e16;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-app);
+      color: var(--text-main);
+      font-size: 16px;
+      line-height: 1.4;
+      overflow-x: hidden;
+      width: 100%;
+    }
+
+    /* ==========================================================================
+       2. TOP APP BAR & NAVIGATION TABS
+       ========================================================================== */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+      color: #ffffff;
+      padding: 10px 14px;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .app-title-group {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .app-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: -0.01em;
+    }
+
+    .app-subtitle {
+      font-size: 0.75rem;
+      opacity: 0.9;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #4ade80;
+      display: inline-block;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .badge-btn {
+      background: rgba(255, 255, 255, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #ffffff;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s ease;
+    }
+
+    .badge-btn:active {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .count-pill {
+      background: #ffffff;
+      color: #0f766e;
+      border-radius: 999px;
+      padding: 1px 7px;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    /* Main Stepper / Section Tabs */
+    .main-tabs {
+      position: sticky;
+      top: 56px;
+      z-index: 35;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      padding: 6px;
+      gap: 6px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .tab-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      padding: 8px 4px;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+
+    .tab-btn.active {
+      background: var(--primary-soft);
+      color: var(--primary-text);
+      font-weight: 700;
+    }
+
+    .tab-step {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      opacity: 0.8;
+    }
+
+    .tab-warn-dot {
+      position: absolute;
+      top: 5px;
+      right: 8px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--warning-border);
+      display: none;
+    }
+
+    .tab-btn.has-warning .tab-warn-dot {
+      display: block;
+    }
+
+    /* ==========================================================================
+       3. MAIN CONTAINER, CARDS & FORM ELEMENTS
+       ========================================================================== */
+    .container {
+      width: 100%;
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 12px 12px 110px 12px;
+    }
+
+    .edit-banner {
+      background: var(--accent-soft);
+      border: 1px solid var(--accent);
+      color: var(--text-main);
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      margin-bottom: 12px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.85rem;
+    }
+
+    .edit-banner.visible {
+      display: flex;
+    }
+
+    .section-panel {
+      display: none;
+      animation: fadeIn 0.18s ease-out;
+    }
+
+    .section-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .card-title {
+      font-size: 0.98rem;
+      font-weight: 700;
+      margin: 0;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .col-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: var(--bg-subtle);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+      padding: 2px 7px;
+      border-radius: 999px;
+    }
+
+    /* Sticky Context Switch */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      gap: 10px;
+    }
+
+    .toggle-label-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .toggle-title {
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    .toggle-desc {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: #94a3b8;
+      transition: 0.2s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.2s;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    }
+
+    input:checked + .slider {
+      background-color: var(--primary);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Responsive Form Grids */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    @media (min-width: 560px) {
+      .form-grid.cols-2 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .form-grid.cols-3 {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .grid-3-compact {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .grid-2-compact {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .field-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    .field-label .req {
+      color: var(--danger);
+    }
+
+    .field-input, .field-select {
+      width: 100%;
+      min-height: 46px;
+      padding: 10px 12px;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text-main);
+      background-color: var(--bg-input);
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      appearance: none;
+    }
+
+    .field-input:focus, .field-select:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.18);
+    }
+
+    .field-input.num-input {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      text-align: center;
+      padding: 10px 6px;
+    }
+
+    .field-input.input-warning {
+      border-color: var(--warning-border);
+      background-color: var(--warning-bg);
+    }
+
+    .field-input.input-valid {
+      border-color: var(--success);
+    }
+
+    .field-input.input-invalid {
+      border-color: var(--danger);
+    }
+
+    .field-input:disabled {
+      opacity: 0.5;
+      background-color: var(--bg-subtle);
+      cursor: not-allowed;
+    }
+
+    .field-hint {
+      font-size: 0.72rem;
+      color: var(--text-light);
+      min-height: 15px;
+    }
+
+    .field-hint.error {
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    .field-hint.ok {
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    /* Live KPI Strip & Warning Banners */
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border-color);
+    }
+
+    .kpi-box {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      text-align: center;
+    }
+
+    .kpi-label {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .kpi-val {
+      font-size: 0.98rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-top: 2px;
+    }
+
+    .warning-banner {
+      background: var(--warning-bg);
+      border: 1px solid var(--warning-border);
+      color: var(--warning-text);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-top: 10px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .warning-banner.visible {
+      display: flex;
+    }
+
+    /* Sub-tabs for Day 1 / Day 2 / Day 3 / Catch-Up */
+    .day-pills {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+      background: var(--bg-card);
+      padding: 6px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+
+    .day-pill {
+      border: 1px solid transparent;
+      background: var(--bg-subtle);
+      color: var(--text-muted);
+      padding: 9px 4px;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      position: relative;
+    }
+
+    .day-pill.active {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .day-pill .pill-warn {
+      display: none;
+      color: #f59e0b;
+      margin-left: 2px;
+    }
+
+    .day-pill.has-warn .pill-warn {
+      display: inline;
+    }
+
+    .day-card-pane {
+      display: none;
+    }
+
+    .day-card-pane.active {
+      display: block;
+    }
+
+    /* MMP Segmented Control */
+    .segmented-yn {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .yn-btn {
+      min-height: 44px;
+      border: 1.5px solid var(--border-color);
+      background: var(--bg-subtle);
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .yn-btn.active-yes {
+      background: var(--primary-soft);
+      border-color: var(--primary);
+      color: var(--primary-text);
+    }
+
+    .yn-btn.active-no {
+      background: var(--bg-card);
+      border-color: var(--text-main);
+      color: var(--text-main);
+    }
+
+    /* ==========================================================================
+       4. STICKY BOTTOM ACTION BAR
+       ========================================================================== */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 40;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border-color);
+      padding: 10px 12px;
+      box-shadow: 0 -4px 12px rgba(15, 23, 42, 0.08);
+    }
+
+    .bottom-bar-inner {
+      max-width: 820px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: auto 1fr 1.2fr;
+      gap: 8px;
+    }
+
+    .btn {
+      min-height: 46px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: transform 0.1s ease, opacity 0.15s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-ghost {
+      background: var(--bg-subtle);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary {
+      background: var(--primary-soft);
+      color: var(--primary-text);
+      border: 1px solid var(--primary);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .btn-danger {
+      background: var(--danger-soft);
+      color: var(--danger);
+      border: 1px solid var(--danger);
+    }
+
+    .btn-sm {
+      min-height: 36px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+    }
+
+    /* ==========================================================================
+       5. SAVED RECORDS VIEW & AGGREGATE SUMMARY
+       ========================================================================== */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    @media (min-width: 560px) {
+      .summary-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+    }
+
+    .stat-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .stat-num {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-top: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-sub {
+      font-size: 0.74rem;
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .export-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .record-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .record-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .record-team {
+      font-weight: 800;
+      font-size: 0.98rem;
+      color: var(--primary);
+    }
+
+    .record-meta {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .record-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      background: var(--bg-subtle);
+      padding: 8px;
+      border-radius: var(--radius-sm);
+      font-size: 0.76rem;
+      text-align: center;
+    }
+
+    .record-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    /* ==========================================================================
+       6. CUSTOM TOAST & CONFIRMATION MODAL (NO alert/confirm)
+       ========================================================================== */
+    .toast {
+      position: fixed;
+      top: 72px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: #0f172a;
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 0.86rem;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      max-width: 92vw;
+      text-align: center;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      z-index: 90;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      max-width: 420px;
+      width: 100%;
+      padding: 18px;
+      box-shadow: 0 20px 35px rgba(0,0,0,0.3);
+    }
+
+    .modal-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      margin: 0 0 8px 0;
+    }
+
+    .modal-body {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================================
+       TOP APPLICATION HEADER
+       ======================================================================== -->
+  <header class="app-header">
+    <div class="app-title-group">
+      <h1 class="app-title">Campaign Tally Sheet</h1>
+      <div class="app-subtitle">
+        <span class="status-dot" title="Offline Storage Active"></span>
+        <span>46-Col Operational &amp; TS Entry</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="badge-btn" onclick="switchMainTab('records')">
+        <span>Saved</span>
+        <span class="count-pill" id="headerRecordCount">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       4-SECTION NAVIGATION BAR
+       ======================================================================== -->
+  <nav class="main-tabs" role="tablist">
+    <button type="button" class="tab-btn active" id="tab-btn-admin" onclick="switchMainTab('admin')">
+      <span class="tab-step">Step 1</span>
+      <span>Admin &amp; Team</span>
+      <span class="tab-warn-dot"></span>
+    </button>
+    <button type="button" class="tab-btn" id="tab-btn-hh" onclick="switchMainTab('hh')">
+      <span class="tab-step">Step 2</span>
+      <span>HH &amp; MMP</span>
+      <span class="tab-warn-dot"></span>
+    </button>
+    <button type="button" class="tab-btn" id="tab-btn-coverage" onclick="switchMainTab('coverage')">
+      <span class="tab-step">Step 3</span>
+      <span>D1–D3 &amp; CatchUp</span>
+      <span class="tab-warn-dot"></span>
+    </button>
+    <button type="button" class="tab-btn" id="tab-btn-records" onclick="switchMainTab('records')">
+      <span class="tab-step">Export</span>
+      <span>Records (<span id="tabRecordCount">0</span>)</span>
+    </button>
+  </nav>
+
+  <!-- ========================================================================
+       MAIN WORKSPACE CONTAINER
+       ======================================================================== -->
+  <main class="container">
+
+    <!-- Editing Mode Banner -->
+    <div class="edit-banner" id="editModeBanner">
+      <div>
+        <strong>Editing Saved Record:</strong> <span id="editingTeamLabel">Team</span>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="cancelEditMode()">Cancel Edit</button>
+    </div>
+
+    <form id="campaignForm" novalidate>
+
+      <!-- ====================================================================
+           SECTION 1: ADMIN & TEAM INFO (Columns 1 to 10)
+           ==================================================================== -->
+      <section class="section-panel active" id="panel-admin">
+        
+        <!-- Sticky Admin Context Toggle -->
+        <div class="toggle-row">
+          <div class="toggle-label-group">
+            <span class="toggle-title">Sticky Admin Context</span>
+            <span class="toggle-desc">Keep District, Tehsil, UC, UCMO &amp; AIC for next team</span>
+          </div>
+          <label class="switch" aria-label="Toggle Sticky Admin Context">
+            <input type="checkbox" id="stickyAdminToggle" checked />
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Geographic & Supervisory Hierarchy (Cols 1-5) -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Administrative Hierarchy</h2>
+            <span class="col-badge">Cols 1–5</span>
+          </div>
+          <div class="form-grid cols-2">
+            <div class="field-group">
+              <label class="field-label" for="f_District">1. District <span class="req">*</span></label>
+              <input type="text" id="f_District" class="field-input" placeholder="e.g. Rajanpur" autocomplete="off" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f_Tehsil">2. Tehsil <span class="req">*</span></label>
+              <input type="text" id="f_Tehsil" class="field-input" placeholder="e.g. Jampur" autocomplete="off" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f_UC">3. UC <span class="req">*</span></label>
+              <input type="text" id="f_UC" class="field-input" placeholder="Union Council name/no" autocomplete="off" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f_UCMO">4. UCMO</label>
+              <input type="text" id="f_UCMO" class="field-input" placeholder="UCMO Name" autocomplete="off" />
+            </div>
+            <div class="field-group" style="grid-column: 1 / -1;">
+              <label class="field-label" for="f_Area_In_Charge">5. Area In-Charge</label>
+              <input type="text" id="f_Area_In_Charge" class="field-input" placeholder="Area In-Charge Name" autocomplete="off" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Team & Member CNIC Details (Cols 6-10) -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Team &amp; Member Details</h2>
+            <span class="col-badge">Cols 6–10</span>
+          </div>
+          <div class="form-grid cols-2">
+            <div class="field-group" style="grid-column: 1 / -1;">
+              <label class="field-label" for="f_Team_No">6. Team # <span class="req">*</span></label>
+              <input type="text" id="f_Team_No" class="field-input" placeholder="e.g. Team-01 or 104" autocomplete="off" />
+            </div>
+
+            <!-- Team Member 1 -->
+            <div class="field-group">
+              <label class="field-label" for="f_Name_TM1">7. Name Team Member 1</label>
+              <input type="text" id="f_Name_TM1" class="field-input" placeholder="Full Name" autocomplete="off" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f_CNIC_TM1">8. CNIC Team Member 1</label>
+              <input type="text" id="f_CNIC_TM1" class="field-input cnic-input" inputmode="numeric" maxlength="15" placeholder="XXXXX-XXXXXXX-X" autocomplete="off" />
+              <span class="field-hint" id="hint_CNIC_TM1">13 digits auto-formatted</span>
+            </div>
+
+            <!-- Team Member 2 -->
+            <div class="field-group">
+              <label class="field-label" for="f_Name_TM2">9. Name Team Member 2</label>
+              <input type="text" id="f_Name_TM2" class="field-input" placeholder="Full Name" autocomplete="off" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f_CNIC_TM2">10. CNIC Team Member 2</label>
+              <input type="text" id="f_CNIC_TM2" class="field-input cnic-input" inputmode="numeric" maxlength="15" placeholder="XXXXX-XXXXXXX-X" autocomplete="off" />
+              <span class="field-hint" id="hint_CNIC_TM2">13 digits auto-formatted</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="switchMainTab('hh')">Next: HH &amp; MMP &rarr;</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SECTION 2: HOUSEHOLD (HH) & MMP DATA (Columns 11 to 23)
+           ==================================================================== -->
+      <section class="section-panel" id="panel-hh">
+        
+        <!-- Household Target vs Recorded (Cols 11-16) -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Household (HH) Operational vs Tally</h2>
+            <span class="col-badge">Cols 11–16</span>
+          </div>
+
+          <div class="field-label" style="margin-bottom: 6px;">HH Target (Operational Sheet)</div>
+          <div class="grid-3-compact" style="margin-bottom: 14px;">
+            <div class="field-group">
+              <label class="field-label" for="f_HH_Target_D1">11. Day 1</label>
+              <input type="number" min="0" inputmode="numeric" id="f_HH_Target_D1" class="field-input num-input calc-trigger" placeholder="0" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f_HH_Target_D2">12. Day 2</label>
+              <input type="number" min="0" inputmode="numeric" id="f_HH_Target_D2" class="field-input num-input calc-trigger" placeholder="0" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f_HH_Target_D3">13. Day 3</label>
+              <input type="number" min="0" inputmode="numeric" id="f_HH_Target_D3" class="field-input num-input calc-trigger" placeholder="0" />
+            </div>
+          </div>
+
+          <div class="field-label" style="margin-bottom: 6px;">HH Recorded (Tally Sheet)</div>
+          <div class="grid-3-compact">
+            <div class="field-group">
+              <label class="field-label" for="f_HH_Rec_D1">14. Day 1</label>
+              <input type="number" min="0" inputmode="numeric" id="f_HH_Rec_D1" class="field-input num-input calc-trigger" placeholder="0" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f_HH_Rec_D2">15. Day 2</label>
+              <input type="number" min="0" inputmode="numeric" id="f_HH_Rec_D2" class="field-input num-input calc-trigger" placeholder="0" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="f_HH_Rec_D3">16. Day 3</label>
+              <input type="number" min="0" inputmode="numeric" id="f_HH_Rec_D3" class="field-input num-input calc-trigger" placeholder="0" />
+            </div>
+          </div>
+
+          <!-- Live HH KPI Summary -->
+          <div class="kpi-strip">
+            <div class="kpi-box">
+              <div class="kpi-label">Total HH Target</div>
+              <div class="kpi-val" id="kpi_hh_target">0</div>
+            </div>
+            <div class="kpi-box">
+              <div class="kpi-label">Total HH Rec</div>
+              <div class="kpi-val" id="kpi_hh_rec">0</div>
+            </div>
+            <div class="kpi-box">
+              <div class="kpi-label">HH Coverage / Diff</div>
+              <div class="kpi-val" id="kpi_hh_diff">0% (0)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mobile & Migrant Population (MMP) (Cols 17-23) -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Mobile &amp; Migrant Population (MMP)</h2>
+            <span class="col-badge">Cols 17–23</span>
+          </div>
+
+          <div class="field-group" style="margin-bottom: 14px;">
+            <label class="field-label">17. MMP (Y/N)</label>
+            <input type="hidden" id="f_MMP_YN" value="N" />
+            <div class="segmented-yn">
+              <button type="button" class="yn-btn" id="btn_mmp_yes" onclick="setMMPStatus('Y')">Yes (Y)</button>
+              <button type="button" class="yn-btn active-no" id="btn_mmp_no" onclick="setMMPStatus('N')">No (N)</button>
+            </div>
+          </div>
+
+          <div id="mmpFieldsWrapper">
+            <div class="field-label" style="margin-bottom: 6px;">MMP Target / Identified (Cols 18, 20, 22)</div>
+            <div class="grid-3-compact" style="margin-bottom: 12px;">
+              <div class="field-group">
+                <label class="field-label" for="f_MMP_D1">18. MMP D1</label>
+                <input type="number" min="0" inputmode="numeric" id="f_MMP_D1" class="field-input num-input mmp-num calc-trigger" placeholder="0" disabled />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_MMP_D2">20. MMP D2</label>
+                <input type="number" min="0" inputmode="numeric" id="f_MMP_D2" class="field-input num-input mmp-num calc-trigger" placeholder="0" disabled />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_MMP_D3">22. MMP D3</label>
+                <input type="number" min="0" inputmode="numeric" id="f_MMP_D3" class="field-input num-input mmp-num calc-trigger" placeholder="0" disabled />
+              </div>
+            </div>
+
+            <div class="field-label" style="margin-bottom: 6px;">MMP Covered (Cols 19, 21, 23)</div>
+            <div class="grid-3-compact">
+              <div class="field-group">
+                <label class="field-label" for="f_MMP_Cov_D1">19. Cov D1</label>
+                <input type="number" min="0" inputmode="numeric" id="f_MMP_Cov_D1" class="field-input num-input mmp-num calc-trigger" placeholder="0" disabled />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_MMP_Cov_D2">21. Cov D2</label>
+                <input type="number" min="0" inputmode="numeric" id="f_MMP_Cov_D2" class="field-input num-input mmp-num calc-trigger" placeholder="0" disabled />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_MMP_Cov_D3">23. Cov D3</label>
+                <input type="number" min="0" inputmode="numeric" id="f_MMP_Cov_D3" class="field-input num-input mmp-num calc-trigger" placeholder="0" disabled />
+              </div>
+            </div>
+          </div>
+
+          <div class="warning-banner" id="warn_mmp">
+            <span>&#9888;</span>
+            <span id="warn_mmp_text">MMP Covered exceeds MMP Target on one or more days.</span>
+          </div>
+
+          <div style="margin-top: 14px; display: flex; justify-content: space-between;">
+            <button type="button" class="btn btn-ghost" onclick="switchMainTab('admin')">&larr; Admin</button>
+            <button type="button" class="btn btn-secondary" onclick="switchMainTab('coverage')">Next: Coverage &rarr;</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SECTION 3: DAY 1, DAY 2, DAY 3 & CATCH-UP COVERAGE (Columns 24 to 46)
+           ==================================================================== -->
+      <section class="section-panel" id="panel-coverage">
+        
+        <!-- Sub-navigation pills for Day 1, Day 2, Day 3, Catch-Up -->
+        <div class="day-pills" role="tablist">
+          <button type="button" class="day-pill active" id="pill-d1" onclick="switchDayPane('d1')">Day 1 <span class="pill-warn">&#9888;</span></button>
+          <button type="button" class="day-pill" id="pill-d2" onclick="switchDayPane('d2')">Day 2 <span class="pill-warn">&#9888;</span></button>
+          <button type="button" class="day-pill" id="pill-d3" onclick="switchDayPane('d3')">Day 3 <span class="pill-warn">&#9888;</span></button>
+          <button type="button" class="day-pill" id="pill-cu" onclick="switchDayPane('cu')">Catch-Up <span class="pill-warn">&#9888;</span></button>
+        </div>
+
+        <!-- DAY 1 PANE (Cols 24-30) -->
+        <div class="day-card-pane active" id="pane-d1">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Day 1 Children Coverage</h2>
+              <span class="col-badge">Cols 24–30</span>
+            </div>
+            <div class="grid-2-compact">
+              <div class="field-group">
+                <label class="field-label" for="f_Target_D1">24. Target Day 1</label>
+                <input type="number" min="0" inputmode="numeric" id="f_Target_D1" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_Covered_D1">25. Covered Day 1</label>
+                <input type="number" min="0" inputmode="numeric" id="f_Covered_D1" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_NA_D1">26. NA Day 1</label>
+                <input type="number" min="0" inputmode="numeric" id="f_NA_D1" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_SameDay_NA_D1">27. Same Day NA Cov D1</label>
+                <input type="number" min="0" inputmode="numeric" id="f_SameDay_NA_D1" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_CatchUp_NA_D1">28. Cov in Catch UP-NA D1</label>
+                <input type="number" min="0" inputmode="numeric" id="f_CatchUp_NA_D1" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_Schools_D1">29. Schools Coverage D1</label>
+                <input type="number" min="0" inputmode="numeric" id="f_Schools_D1" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group" style="grid-column: 1 / -1;">
+                <label class="field-label" for="f_ZeroDose_D1">30. Zero Dose Children recorded on TS Day 1</label>
+                <input type="number" min="0" inputmode="numeric" id="f_ZeroDose_D1" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+            </div>
+            <div class="warning-banner" id="warn_d1">
+              <span>&#9888;</span>
+              <span id="warn_d1_text">Check Day 1 figures.</span>
+            </div>
+            <div style="margin-top: 12px; display: flex; justify-content: flex-end;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="switchDayPane('d2')">Next: Day 2 &rarr;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- DAY 2 PANE (Cols 31-37) -->
+        <div class="day-card-pane" id="pane-d2">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Day 2 Children Coverage</h2>
+              <span class="col-badge">Cols 31–37</span>
+            </div>
+            <div class="grid-2-compact">
+              <div class="field-group">
+                <label class="field-label" for="f_Target_D2">31. Target Day 2</label>
+                <input type="number" min="0" inputmode="numeric" id="f_Target_D2" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_Covered_D2">32. Covered Day 2</label>
+                <input type="number" min="0" inputmode="numeric" id="f_Covered_D2" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_NA_D2">33. NA Day 2</label>
+                <input type="number" min="0" inputmode="numeric" id="f_NA_D2" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_SameDay_NA_D2">34. Same Day NA Cov D2</label>
+                <input type="number" min="0" inputmode="numeric" id="f_SameDay_NA_D2" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_CatchUp_NA_D2">35. Cov in Catch UP-NA D2</label>
+                <input type="number" min="0" inputmode="numeric" id="f_CatchUp_NA_D2" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_Schools_D2">36. Schools Coverage D2</label>
+                <input type="number" min="0" inputmode="numeric" id="f_Schools_D2" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group" style="grid-column: 1 / -1;">
+                <label class="field-label" for="f_ZeroDose_D2">37. Zero Dose Children recorded on TS Day 2</label>
+                <input type="number" min="0" inputmode="numeric" id="f_ZeroDose_D2" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+            </div>
+            <div class="warning-banner" id="warn_d2">
+              <span>&#9888;</span>
+              <span id="warn_d2_text">Check Day 2 figures.</span>
+            </div>
+            <div style="margin-top: 12px; display: flex; justify-content: space-between;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="switchDayPane('d1')">&larr; Day 1</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="switchDayPane('d3')">Next: Day 3 &rarr;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- DAY 3 PANE (Cols 38-44) -->
+        <div class="day-card-pane" id="pane-d3">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Day 3 Children Coverage</h2>
+              <span class="col-badge">Cols 38–44</span>
+            </div>
+            <div class="grid-2-compact">
+              <div class="field-group">
+                <label class="field-label" for="f_Target_D3">38. Target Day 3</label>
+                <input type="number" min="0" inputmode="numeric" id="f_Target_D3" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_Covered_D3">39. Covered Day 3</label>
+                <input type="number" min="0" inputmode="numeric" id="f_Covered_D3" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_NA_D3">40. NA Day 3</label>
+                <input type="number" min="0" inputmode="numeric" id="f_NA_D3" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_SameDay_NA_D3">41. Same Day NA Cov D3</label>
+                <input type="number" min="0" inputmode="numeric" id="f_SameDay_NA_D3" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_CatchUp_NA_D3">42. Cov in Catch UP-NA D3</label>
+                <input type="number" min="0" inputmode="numeric" id="f_CatchUp_NA_D3" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_Schools_D3">43. Schools Coverage D3</label>
+                <input type="number" min="0" inputmode="numeric" id="f_Schools_D3" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group" style="grid-column: 1 / -1;">
+                <label class="field-label" for="f_ZeroDose_D3">44. Zero Dose Children recorded on TS Day 3</label>
+                <input type="number" min="0" inputmode="numeric" id="f_ZeroDose_D3" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+            </div>
+            <div class="warning-banner" id="warn_d3">
+              <span>&#9888;</span>
+              <span id="warn_d3_text">Check Day 3 figures.</span>
+            </div>
+            <div style="margin-top: 12px; display: flex; justify-content: space-between;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="switchDayPane('d2')">&larr; Day 2</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="switchDayPane('cu')">Next: Catch-Up &rarr;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- CATCH-UP DAY 1 PANE (Cols 45-46 - Exact Header Order Preserved!) -->
+        <div class="day-card-pane" id="pane-cu">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Catch-Up Day 1</h2>
+              <span class="col-badge">Cols 45–46</span>
+            </div>
+            <div class="grid-2-compact">
+              <div class="field-group">
+                <label class="field-label" for="f_Covered_CU_D1">45. Covered Catch-UP Day 1</label>
+                <input type="number" min="0" inputmode="numeric" id="f_Covered_CU_D1" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="f_Target_CU_D1">46. Target Catch-UP Day 1</label>
+                <input type="number" min="0" inputmode="numeric" id="f_Target_CU_D1" class="field-input num-input calc-trigger" placeholder="0" />
+              </div>
+            </div>
+            <div class="warning-banner" id="warn_cu">
+              <span>&#9888;</span>
+              <span id="warn_cu_text">Covered Catch-UP Day 1 exceeds Target Catch-UP Day 1.</span>
+            </div>
+            <div style="margin-top: 12px; display: flex; justify-content: flex-start;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="switchDayPane('d3')">&larr; Day 3</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Real-Time 3-Day Summary Card -->
+        <div class="card" style="background: var(--bg-subtle);">
+          <div class="card-header" style="margin-bottom: 8px; padding-bottom: 6px;">
+            <h3 class="card-title" style="font-size: 0.88rem;">Live Team Totals (Day 1–3)</h3>
+            <span class="col-badge" id="live_cov_pct">0% Cov</span>
+          </div>
+          <div class="grid-3-compact">
+            <div class="kpi-box">
+              <div class="kpi-label">Target D1–3</div>
+              <div class="kpi-val" id="live_tot_target">0</div>
+            </div>
+            <div class="kpi-box">
+              <div class="kpi-label">Covered D1–3</div>
+              <div class="kpi-val" id="live_tot_cov">0</div>
+            </div>
+            <div class="kpi-box">
+              <div class="kpi-label">Total NA / ZD</div>
+              <div class="kpi-val" id="live_tot_nazd">0 / 0</div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ====================================================================
+           SECTION 4: SAVED RECORDS, AGGREGATES & EXCEL/JSON EXPORT
+           ==================================================================== -->
+      <section class="section-panel" id="panel-records">
+        
+        <!-- Campaign Aggregate Totals -->
+        <div class="summary-grid">
+          <div class="stat-card">
+            <div class="stat-title">Teams Entered</div>
+            <div class="stat-num" id="agg_teams">0</div>
+            <div class="stat-sub">Offline Saved</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">HH Target / Rec</div>
+            <div class="stat-num" id="agg_hh">0 / 0</div>
+            <div class="stat-sub" id="agg_hh_pct">0% HH Rec</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Target D1–3</div>
+            <div class="stat-num" id="agg_target">0</div>
+            <div class="stat-sub">Children Target</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Covered D1–3</div>
+            <div class="stat-num" id="agg_covered">0</div>
+            <div class="stat-sub" id="agg_cov_pct">0% Coverage</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Total NA (D1–3)</div>
+            <div class="stat-num" id="agg_na">0</div>
+            <div class="stat-sub" id="agg_na_cov">0 NA Covered</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-title">Zero Dose (D1–3)</div>
+            <div class="stat-num" id="agg_zd">0</div>
+            <div class="stat-sub" id="agg_schools">0 Schools</div>
+          </div>
+        </div>
+
+        <!-- Export & Backup Controls -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Export &amp; Data Transfer</h2>
+            <span class="col-badge">46 Exact Headers</span>
+          </div>
+          <div class="export-grid">
+            <button type="button" class="btn btn-primary" onclick="exportCSV()">
+              &#128229; Download CSV
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="copyTSVToClipboard()">
+              &#128203; Copy for Excel
+            </button>
+            <button type="button" class="btn btn-ghost" onclick="exportJSON()">
+              &#128190; Backup JSON
+            </button>
+            <button type="button" class="btn btn-ghost" onclick="document.getElementById('jsonImportInput').click()">
+              &#128194; Import JSON
+            </button>
+          </div>
+          <input type="file" id="jsonImportInput" accept=".json,application/json" style="display: none;" onchange="importJSON(event)" />
+          <div style="font-size: 0.75rem; color: var(--text-muted);">
+            <strong>Tip:</strong> "Copy for Excel" copies tab-separated rows with all 46 headers so you can paste directly into an open Excel sheet.
+          </div>
+        </div>
+
+        <!-- Search & Saved Records List -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Saved Team Entries</h2>
+            <button type="button" class="btn btn-danger btn-sm" id="btnClearAll" onclick="confirmClearAll()">Clear All</button>
+          </div>
+          <div class="field-group" style="margin-bottom: 12px;">
+            <input type="search" id="recordSearchInput" class="field-input" placeholder="Search by Team #, UC, Area In-Charge, or District..." oninput="renderRecordsList()" />
+          </div>
+          <div id="recordsListContainer">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+      </section>
+
+    </form>
+  </main>
+
+  <!-- ========================================================================
+       STICKY BOTTOM ACTION BAR (HIDDEN ON RECORDS TAB)
+       ======================================================================== -->
+  <footer class="bottom-bar" id="bottomActionBar">
+    <div class="bottom-bar-inner">
+      <button type="button" class="btn btn-ghost" onclick="confirmResetForm()" title="Clear current form">Reset</button>
+      <button type="button" class="btn btn-secondary" onclick="saveRecord(false)">Save</button>
+      <button type="button" class="btn btn-primary" onclick="saveRecord(true)">Save + Next Team</button>
+    </div>
+  </footer>
+
+  <!-- ========================================================================
+       CUSTOM TOAST & CONFIRMATION MODAL
+       ======================================================================== -->
+  <div class="toast" id="toastNotification" role="status" aria-live="polite"></div>
+
+  <div class="modal-backdrop" id="confirmModal">
+    <div class="modal-card">
+      <h3 class="modal-title" id="modalTitle">Confirm Action</h3>
+      <p class="modal-body" id="modalBody">Are you sure?</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeModal()">Cancel</button>
+        <button type="button" class="btn btn-danger btn-sm" id="modalConfirmBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       APPLICATION LOGIC (100% SELF-CONTAINED VANILLA JS)
+       ======================================================================== -->
+  <script>
+    /**
+     * EXACT 46 COLUMN HEADERS IN STRICT ORDER
+     * Matches user specification character-for-character.
+     */
+    const EXACT_HEADERS = [
+      "District",
+      "Tehsil",
+      "UC",
+      "UCMO",
+      "Area In-Charge",
+      "Team #",
+      "Name Team Member 1",
+      "CNIC Team Member 1",
+      "Name Team Member 2",
+      "CNIC Team Member 2",
+      "HH Target (Operational Sheet)-Day 1",
+      "HH Target (Operational Sheet)-Day 2",
+      "HH Target (Operational Sheet)-Day 3",
+      "HH Recorded (Tally Sheet)-Day 1",
+      "HH Recorded (Tally Sheet)-Day 2",
+      "HH Recorded (Tally Sheet)-Day 3",
+      "MMP (Y/N)",
+      "MMP Day 1",
+      "MMP Covered Day 1",
+      "MMP Day 2",
+      "MMP Covered Day 2",
+      "MMP Day 3",
+      "MMP Covered Day 3",
+      "Target Day 1",
+      "Covered Day 1",
+      "NA Day 1",
+      "Same Day NA Coverage Day 1",
+      "Covered in Catch UP-NA Day 1",
+      "Schools Coverage Day 1",
+      "Zero Dose Children recorded on TS Day 1",
+      "Target Day 2",
+      "Covered Day 2",
+      "NA Day 2",
+      "Same Day NA Coverage Day 2",
+      "Covered in Catch UP-NA Day 2",
+      "Schools Coverage Day 2",
+      "Zero Dose Children recorded on TS Day 2",
+      "Target Day 3",
+      "Covered Day 3",
+      "NA Day 3",
+      "Same Day NA Coverage Day 3",
+      "Covered in Catch UP-NA Day 3",
+      "Schools Coverage Day 3",
+      "Zero Dose Children recorded on TS Day 3",
+      "Covered Catch-UP Day 1",
+      "Target Catch-UP Day 1"
+    ];
+
+    /**
+     * Ordered mapping from the 46 headers to DOM input IDs
+     */
+    const FIELD_MAP = [
+      { header: "District", id: "f_District", type: "text", sticky: true },
+      { header: "Tehsil", id: "f_Tehsil", type: "text", sticky: true },
+      { header: "UC", id: "f_UC", type: "text", sticky: true },
+      { header: "UCMO", id: "f_UCMO", type: "text", sticky: true },
+      { header: "Area In-Charge", id: "f_Area_In_Charge", type: "text", sticky: true },
+      { header: "Team #", id: "f_Team_No", type: "text" },
+      { header: "Name Team Member 1", id: "f_Name_TM1", type: "text" },
+      { header: "CNIC Team Member 1", id: "f_CNIC_TM1", type: "cnic" },
+      { header: "Name Team Member 2", id: "f_Name_TM2", type: "text" },
+      { header: "CNIC Team Member 2", id: "f_CNIC_TM2", type: "cnic" },
+      { header: "HH Target (Operational Sheet)-Day 1", id: "f_HH_Target_D1", type: "num" },
+      { header: "HH Target (Operational Sheet)-Day 2", id: "f_HH_Target_D2", type: "num" },
+      { header: "HH Target (Operational Sheet)-Day 3", id: "f_HH_Target_D3", type: "num" },
+      { header: "HH Recorded (Tally Sheet)-Day 1", id: "f_HH_Rec_D1", type: "num" },
+      { header: "HH Recorded (Tally Sheet)-Day 2", id: "f_HH_Rec_D2", type: "num" },
+      { header: "HH Recorded (Tally Sheet)-Day 3", id: "f_HH_Rec_D3", type: "num" },
+      { header: "MMP (Y/N)", id: "f_MMP_YN", type: "yn" },
+      { header: "MMP Day 1", id: "f_MMP_D1", type: "num" },
+      { header: "MMP Covered Day 1", id: "f_MMP_Cov_D1", type: "num" },
+      { header: "MMP Day 2", id: "f_MMP_D2", type: "num" },
+      { header: "MMP Covered Day 2", id: "f_MMP_Cov_D2", type: "num" },
+      { header: "MMP Day 3", id: "f_MMP_D3", type: "num" },
+      { header: "MMP Covered Day 3", id: "f_MMP_Cov_D3", type: "num" },
+      { header: "Target Day 1", id: "f_Target_D1", type: "num" },
+      { header: "Covered Day 1", id: "f_Covered_D1", type: "num" },
+      { header: "NA Day 1", id: "f_NA_D1", type: "num" },
+      { header: "Same Day NA Coverage Day 1", id: "f_SameDay_NA_D1", type: "num" },
+      { header: "Covered in Catch UP-NA Day 1", id: "f_CatchUp_NA_D1", type: "num" },
+      { header: "Schools Coverage Day 1", id: "f_Schools_D1", type: "num" },
+      { header: "Zero Dose Children recorded on TS Day 1", id: "f_ZeroDose_D1", type: "num" },
+      { header: "Target Day 2", id: "f_Target_D2", type: "num" },
+      { header: "Covered Day 2", id: "f_Covered_D2", type: "num" },
+      { header: "NA Day 2", id: "f_NA_D2", type: "num" },
+      { header: "Same Day NA Coverage Day 2", id: "f_SameDay_NA_D2", type: "num" },
+      { header: "Covered in Catch UP-NA Day 2", id: "f_CatchUp_NA_D2", type: "num" },
+      { header: "Schools Coverage Day 2", id: "f_Schools_D2", type: "num" },
+      { header: "Zero Dose Children recorded on TS Day 2", id: "f_ZeroDose_D2", type: "num" },
+      { header: "Target Day 3", id: "f_Target_D3", type: "num" },
+      { header: "Covered Day 3", id: "f_Covered_D3", type: "num" },
+      { header: "NA Day 3", id: "f_NA_D3", type: "num" },
+      { header: "Same Day NA Coverage Day 3", id: "f_SameDay_NA_D3", type: "num" },
+      { header: "Covered in Catch UP-NA Day 3", id: "f_CatchUp_NA_D3", type: "num" },
+      { header: "Schools Coverage Day 3", id: "f_Schools_D3", type: "num" },
+      { header: "Zero Dose Children recorded on TS Day 3", id: "f_ZeroDose_D3", type: "num" },
+      { header: "Covered Catch-UP Day 1", id: "f_Covered_CU_D1", type: "num" },
+      { header: "Target Catch-UP Day 1", id: "f_Target_CU_D1", type: "num" }
+    ];
+
+    const STORAGE_KEY_RECORDS = "campaign_tally_records_v1";
+    const STORAGE_KEY_DRAFT = "campaign_tally_draft_v1";
+    const STORAGE_KEY_STICKY = "campaign_tally_sticky_v1";
+
+    let savedRecords = [];
+    let editingRecordId = null;
+    let toastTimer = null;
+
+    /* ========================================================================
+       INITIALIZATION & EVENT BINDING
+       ======================================================================== */
+    window.addEventListener("DOMContentLoaded", () => {
+      loadFromStorage();
+      bindEvents();
+      setMMPStatus(document.getElementById("f_MMP_YN").value || "N");
+      runLiveCalculationsAndValidations();
+      updateRecordsUI();
+    });
+
+    function bindEvents() {
+      // CNIC auto-formatting (XXXXX-XXXXXXX-X)
+      document.querySelectorAll(".cnic-input").forEach(input => {
+        input.addEventListener("input", (e) => {
+          formatCNICInput(e.target);
+          saveDraft();
+        });
+      });
+
+      // Live calculations and draft auto-save on any input change
+      const form = document.getElementById("campaignForm");
+      form.addEventListener("input", (e) => {
+        if (!e.target.classList.contains("cnic-input")) {
+          runLiveCalculationsAndValidations();
+          saveDraft();
+        }
+      });
+
+      // Sticky toggle persistence
+      const stickyToggle = document.getElementById("stickyAdminToggle");
+      stickyToggle.addEventListener("change", () => {
+        localStorage.setItem(STORAGE_KEY_STICKY, stickyToggle.checked ? "1" : "0");
+      });
+    }
+
+    /* ========================================================================
+       NAVIGATION (MAIN TABS & DAY SUB-PILLS)
+       ======================================================================== */
+    function switchMainTab(tabName) {
+      const tabs = ["admin", "hh", "coverage", "records"];
+      tabs.forEach(t => {
+        document.getElementById(`tab-btn-${t}`).classList.toggle("active", t === tabName);
+        document.getElementById(`panel-${t}`).classList.toggle("active", t === tabName);
+      });
+
+      // Hide bottom save bar when viewing Saved Records
+      const bottomBar = document.getElementById("bottomActionBar");
+      bottomBar.style.display = (tabName === "records") ? "none" : "block";
+
+      if (tabName === "records") {
+        updateRecordsUI();
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function switchDayPane(dayKey) {
+      const days = ["d1", "d2", "d3", "cu"];
+      days.forEach(d => {
+        document.getElementById(`pill-${d}`).classList.toggle("active", d === dayKey);
+        document.getElementById(`pane-${d}`).classList.toggle("active", d === dayKey);
+      });
+    }
+
+    /* ========================================================================
+       CNIC FORMATTING & VALIDATION (XXXXX-XXXXXXX-X)
+       ======================================================================== */
+    function formatCNICInput(inputEl) {
+      let digits = inputEl.value.replace(/\D/g, "").slice(0, 13);
+      let formatted = "";
+      if (digits.length > 0) {
+        formatted = digits.slice(0, 5);
+      }
+      if (digits.length > 5) {
+        formatted += "-" + digits.slice(5, 12);
+      }
+      if (digits.length > 12) {
+        formatted += "-" + digits.slice(12, 13);
+      }
+      inputEl.value = formatted;
+
+      const hintId = inputEl.id === "f_CNIC_TM1" ? "hint_CNIC_TM1" : "hint_CNIC_TM2";
+      const hintEl = document.getElementById(hintId);
+
+      inputEl.classList.remove("input-valid", "input-invalid");
+      hintEl.classList.remove("error", "ok");
+
+      if (digits.length === 0) {
+        hintEl.textContent = "13 digits auto-formatted";
+      } else if (digits.length === 13) {
+        inputEl.classList.add("input-valid");
+        hintEl.classList.add("ok");
+        hintEl.textContent = "Valid 13-digit CNIC";
+      } else {
+        inputEl.classList.add("input-invalid");
+        hintEl.classList.add("error");
+        hintEl.textContent = `${digits.length}/13 digits entered`;
+      }
+    }
+
+    /* ========================================================================
+       MMP (Y/N) TOGGLE HANDLER
+       ======================================================================== */
+    function setMMPStatus(val) {
+      const normalized = (val === "Y") ? "Y" : "N";
+      document.getElementById("f_MMP_YN").value = normalized;
+
+      const btnYes = document.getElementById("btn_mmp_yes");
+      const btnNo = document.getElementById("btn_mmp_no");
+      btnYes.classList.toggle("active-yes", normalized === "Y");
+      btnNo.classList.toggle("active-no", normalized === "N");
+
+      const mmpInputs = document.querySelectorAll(".mmp-num");
+      mmpInputs.forEach(inp => {
+        inp.disabled = (normalized === "N");
+        if (normalized === "N") {
+          inp.value = "";
+        }
+      });
+
+      runLiveCalculationsAndValidations();
+      saveDraft();
+    }
+
+    /* ========================================================================
+       REAL-TIME KPI CALCULATIONS & LOGICAL VALIDATION WARNINGS
+       ======================================================================== */
+    function getNum(id) {
+      const raw = document.getElementById(id).value;
+      const parsed = parseInt(raw, 10);
+      return isNaN(parsed) || parsed < 0 ? 0 : parsed;
+    }
+
+    function runLiveCalculationsAndValidations() {
+      // 1. HH Totals & Coverage
+      const hhT1 = getNum("f_HH_Target_D1");
+      const hhT2 = getNum("f_HH_Target_D2");
+      const hhT3 = getNum("f_HH_Target_D3");
+      const hhR1 = getNum("f_HH_Rec_D1");
+      const hhR2 = getNum("f_HH_Rec_D2");
+      const hhR3 = getNum("f_HH_Rec_D3");
+
+      const totHHTarget = hhT1 + hhT2 + hhT3;
+      const totHHRec = hhR1 + hhR2 + hhR3;
+      const hhDiff = totHHRec - totHHTarget;
+      const hhPct = totHHTarget > 0 ? Math.round((totHHRec / totHHTarget) * 100) : 0;
+
+      document.getElementById("kpi_hh_target").textContent = totHHTarget.toLocaleString();
+      document.getElementById("kpi_hh_rec").textContent = totHHRec.toLocaleString();
+      document.getElementById("kpi_hh_diff").textContent = `${hhPct}% (${hhDiff >= 0 ? "+" : ""}${hhDiff})`;
+
+      // 2. MMP Validation
+      let hhTabWarn = false;
+      const mmpYN = document.getElementById("f_MMP_YN").value;
+      const warnMmpEl = document.getElementById("warn_mmp");
+      if (mmpYN === "Y") {
+        const mmpWarnings = [];
+        [1, 2, 3].forEach(d => {
+          const mT = getNum(`f_MMP_D${d}`);
+          const mC = getNum(`f_MMP_Cov_D${d}`);
+          const covInput = document.getElementById(`f_MMP_Cov_D${d}`);
+          if (mC > mT) {
+            mmpWarnings.push(`Day ${d} MMP Covered (${mC}) > MMP (${mT})`);
+            covInput.classList.add("input-warning");
+          } else {
+            covInput.classList.remove("input-warning");
+          }
+        });
+        if (mmpWarnings.length > 0) {
+          document.getElementById("warn_mmp_text").textContent = mmpWarnings.join(" | ");
+          warnMmpEl.classList.add("visible");
+          hhTabWarn = true;
+        } else {
+          warnMmpEl.classList.remove("visible");
+        }
+      } else {
+        warnMmpEl.classList.remove("visible");
+      }
+      document.getElementById("tab-btn-hh").classList.toggle("has-warning", hhTabWarn);
+
+      // 3. Day 1, Day 2, Day 3 Validations
+      let anyCovWarn = false;
+      [1, 2, 3].forEach(d => {
+        const t = getNum(`f_Target_D${d}`);
+        const c = getNum(`f_Covered_D${d}`);
+        const na = getNum(`f_NA_D${d}`);
+        const sdNa = getNum(`f_SameDay_NA_D${d}`);
+        const cuNa = getNum(`f_CatchUp_NA_D${d}`);
+
+        const msgs = [];
+        const covEl = document.getElementById(`f_Covered_D${d}`);
+        const sdEl = document.getElementById(`f_SameDay_NA_D${d}`);
+        const cuEl = document.getElementById(`f_CatchUp_NA_D${d}`);
+
+        if (c > t && t > 0) {
+          msgs.push(`Covered (${c}) > Target (${t})`);
+          covEl.classList.add("input-warning");
+        } else {
+          covEl.classList.remove("input-warning");
+        }
+
+        if ((sdNa + cuNa) > na) {
+          msgs.push(`Total NA Cov (${sdNa + cuNa}) > NA (${na})`);
+          sdEl.classList.add("input-warning");
+          cuEl.classList.add("input-warning");
+        } else {
+          sdEl.classList.remove("input-warning");
+          cuEl.classList.remove("input-warning");
+        }
+
+        const warnBanner = document.getElementById(`warn_d${d}`);
+        const pillEl = document.getElementById(`pill-d${d}`);
+        if (msgs.length > 0) {
+          document.getElementById(`warn_d${d}_text`).textContent = msgs.join(" • ");
+          warnBanner.classList.add("visible");
+          pillEl.classList.add("has-warn");
+          anyCovWarn = true;
+        } else {
+          warnBanner.classList.remove("visible");
+          pillEl.classList.remove("has-warn");
+        }
+      });
+
+      // 4. Catch-Up Day 1 Validation
+      const cuCov = getNum("f_Covered_CU_D1");
+      const cuTar = getNum("f_Target_CU_D1");
+      const warnCu = document.getElementById("warn_cu");
+      const pillCu = document.getElementById("pill-cu");
+      const cuCovInput = document.getElementById("f_Covered_CU_D1");
+
+      if (cuCov > cuTar && cuTar > 0) {
+        warnCu.classList.add("visible");
+        pillCu.classList.add("has-warn");
+        cuCovInput.classList.add("input-warning");
+        anyCovWarn = true;
+      } else {
+        warnCu.classList.remove("visible");
+        pillCu.classList.remove("has-warn");
+        cuCovInput.classList.remove("input-warning");
+      }
+
+      document.getElementById("tab-btn-coverage").classList.toggle("has-warning", anyCovWarn);
+
+      // 5. Live 3-Day Summary KPIs
+      const totTarget = getNum("f_Target_D1") + getNum("f_Target_D2") + getNum("f_Target_D3");
+      const totCov = getNum("f_Covered_D1") + getNum("f_Covered_D2") + getNum("f_Covered_D3");
+      const totNA = getNum("f_NA_D1") + getNum("f_NA_D2") + getNum("f_NA_D3");
+      const totZD = getNum("f_ZeroDose_D1") + getNum("f_ZeroDose_D2") + getNum("f_ZeroDose_D3");
+      const covPct = totTarget > 0 ? Math.round((totCov / totTarget) * 100) : 0;
+
+      document.getElementById("live_tot_target").textContent = totTarget.toLocaleString();
+      document.getElementById("live_tot_cov").textContent = totCov.toLocaleString();
+      document.getElementById("live_tot_nazd").textContent = `${totNA} / ${totZD}`;
+      document.getElementById("live_cov_pct").textContent = `${covPct}% Cov`;
+    }
+
+    /* ========================================================================
+       FORM DATA SERIALIZATION & PERSISTENCE (LOCALSTORAGE)
+       ======================================================================== */
+    function collectFormRecord() {
+      const record = {
+        _id: editingRecordId || ("rec_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6)),
+        _updatedAt: new Date().toISOString()
+      };
+
+      FIELD_MAP.forEach(f => {
+        const el = document.getElementById(f.id);
+        if (!el) return;
+        if (f.type === "num") {
+          const val = el.value.trim();
+          record[f.header] = val === "" ? 0 : Math.max(0, parseInt(val, 10) || 0);
+        } else if (f.type === "yn") {
+          record[f.header] = el.value === "Y" ? "Y" : "N";
+        } else {
+          record[f.header] = el.value.trim();
+        }
+      });
+
+      return record;
+    }
+
+    function populateFormFromRecord(record) {
+      FIELD_MAP.forEach(f => {
+        const el = document.getElementById(f.id);
+        if (!el) return;
+        const val = record[f.header];
+        if (f.type === "yn") {
+          setMMPStatus(val === "Y" ? "Y" : "N");
+        } else if (f.type === "num") {
+          el.value = (val !== undefined && val !== null && val !== 0) ? val : (val === 0 ? "0" : "");
+        } else {
+          el.value = val || "";
+        }
+      });
+
+      formatCNICInput(document.getElementById("f_CNIC_TM1"));
+      formatCNICInput(document.getElementById("f_CNIC_TM2"));
+      runLiveCalculationsAndValidations();
+    }
+
+    function saveRecord(prepareNextTeam) {
+      const district = document.getElementById("f_District").value.trim();
+      const tehsil = document.getElementById("f_Tehsil").value.trim();
+      const uc = document.getElementById("f_UC").value.trim();
+      const teamNo = document.getElementById("f_Team_No").value.trim();
+
+      if (!district || !tehsil || !uc || !teamNo) {
+        showToast("Please enter District, Tehsil, UC, and Team # first.");
+        switchMainTab("admin");
+        if (!district) document.getElementById("f_District").focus();
+        else if (!tehsil) document.getElementById("f_Tehsil").focus();
+        else if (!uc) document.getElementById("f_UC").focus();
+        else document.getElementById("f_Team_No").focus();
+        return;
+      }
+
+      const record = collectFormRecord();
+
+      if (editingRecordId) {
+        const idx = savedRecords.findIndex(r => r._id === editingRecordId);
+        if (idx !== -1) {
+          savedRecords[idx] = record;
+        } else {
+          savedRecords.unshift(record);
+        }
+        showToast(`Updated ${record["Team #"]} successfully!`);
+        exitEditModeState();
+      } else {
+        savedRecords.unshift(record);
+        showToast(`Saved ${record["Team #"]} (${savedRecords.length} total)`);
+      }
+
+      persistRecords();
+      updateRecordsUI();
+
+      if (prepareNextTeam) {
+        resetFormForNextTeam(record);
+        switchMainTab("admin");
+        document.getElementById("f_Team_No").focus();
+      }
+    }
+
+    function resetFormForNextTeam(previousRecord) {
+      const keepSticky = document.getElementById("stickyAdminToggle").checked;
+      const stickyValues = {};
+
+      if (keepSticky && previousRecord) {
+        FIELD_MAP.filter(f => f.sticky).forEach(f => {
+          stickyValues[f.id] = previousRecord[f.header] || "";
+        });
+      }
+
+      FIELD_MAP.forEach(f => {
+        const el = document.getElementById(f.id);
+        if (!el) return;
+        if (keepSticky && f.sticky) {
+          el.value = stickyValues[f.id] || "";
+        } else if (f.type === "yn") {
+          setMMPStatus("N");
+        } else {
+          el.value = "";
+        }
+      });
+
+      formatCNICInput(document.getElementById("f_CNIC_TM1"));
+      formatCNICInput(document.getElementById("f_CNIC_TM2"));
+      switchDayPane("d1");
+      runLiveCalculationsAndValidations();
+      localStorage.removeItem(STORAGE_KEY_DRAFT);
+    }
+
+    function saveDraft() {
+      if (editingRecordId) return;
+      const draft = {};
+      FIELD_MAP.forEach(f => {
+        const el = document.getElementById(f.id);
+        if (el) draft[f.id] = el.value;
+      });
+      localStorage.setItem(STORAGE_KEY_DRAFT, JSON.stringify(draft));
+    }
+
+    function loadFromStorage() {
+      try {
+        const rawRecords = localStorage.getItem(STORAGE_KEY_RECORDS);
+        if (rawRecords) {
+          savedRecords = JSON.parse(rawRecords) || [];
+        }
+      } catch (e) {
+        savedRecords = [];
+      }
+
+      const stickyPref = localStorage.getItem(STORAGE_KEY_STICKY);
+      if (stickyPref !== null) {
+        document.getElementById("stickyAdminToggle").checked = (stickyPref === "1");
+      }
+
+      try {
+        const rawDraft = localStorage.getItem(STORAGE_KEY_DRAFT);
+        if (rawDraft) {
+          const draft = JSON.parse(rawDraft);
+          Object.keys(draft).forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = draft[id];
+          });
+          formatCNICInput(document.getElementById("f_CNIC_TM1"));
+          formatCNICInput(document.getElementById("f_CNIC_TM2"));
+        }
+      } catch (e) {
+        // Ignore corrupted draft
+      }
+    }
+
+    function persistRecords() {
+      localStorage.setItem(STORAGE_KEY_RECORDS, JSON.stringify(savedRecords));
+    }
+
+    /* ========================================================================
+       EDIT, DELETE & RECORDS MANAGEMENT UI
+       ======================================================================== */
+    function editRecord(id) {
+      const rec = savedRecords.find(r => r._id === id);
+      if (!rec) return;
+
+      editingRecordId = id;
+      populateFormFromRecord(rec);
+
+      document.getElementById("editingTeamLabel").textContent = `${rec["Team #"]} (UC: ${rec["UC"]})`;
+      document.getElementById("editModeBanner").classList.add("visible");
+      switchMainTab("admin");
+      showToast(`Editing ${rec["Team #"]}`);
+    }
+
+    function exitEditModeState() {
+      editingRecordId = null;
+      document.getElementById("editModeBanner").classList.remove("visible");
+    }
+
+    function cancelEditMode() {
+      exitEditModeState();
+      resetFormForNextTeam(null);
+      showToast("Edit cancelled");
+    }
+
+    function confirmDeleteRecord(id) {
+      const rec = savedRecords.find(r => r._id === id);
+      if (!rec) return;
+      openModal(
+        "Delete Team Entry?",
+        `Remove record for Team "${rec["Team #"]}" (UC: ${rec["UC"]})? This cannot be undone.`,
+        () => {
+          savedRecords = savedRecords.filter(r => r._id !== id);
+          if (editingRecordId === id) {
+            exitEditModeState();
+          }
+          persistRecords();
+          updateRecordsUI();
+          showToast("Record deleted");
+        }
+      );
+    }
+
+    function confirmClearAll() {
+      if (savedRecords.length === 0) {
+        showToast("No saved records to clear.");
+        return;
+      }
+      openModal(
+        "Clear All Saved Records?",
+        `Are you sure you want to permanently delete all ${savedRecords.length} saved team entries? Export a CSV or JSON backup first!`,
+        () => {
+          savedRecords = [];
+          exitEditModeState();
+          persistRecords();
+          updateRecordsUI();
+          showToast("All records cleared");
+        }
+      );
+    }
+
+    function confirmResetForm() {
+      openModal(
+        "Reset Current Form?",
+        "Clear all fields in the current form? (Saved records will not be affected.)",
+        () => {
+          exitEditModeState();
+          resetFormForNextTeam(null);
+          showToast("Form cleared");
+        }
+      );
+    }
+
+    function updateRecordsUI() {
+      const count = savedRecords.length;
+      document.getElementById("headerRecordCount").textContent = count;
+      document.getElementById("tabRecordCount").textContent = count;
+
+      // Aggregate totals across all saved teams
+      let sumHHT = 0, sumHHR = 0, sumTar = 0, sumCov = 0, sumNA = 0, sumNACov = 0, sumZD = 0, sumSch = 0;
+
+      savedRecords.forEach(r => {
+        sumHHT += (Number(r["HH Target (Operational Sheet)-Day 1"]) || 0) +
+                  (Number(r["HH Target (Operational Sheet)-Day 2"]) || 0) +
+                  (Number(r["HH Target (Operational Sheet)-Day 3"]) || 0);
+
+        sumHHR += (Number(r["HH Recorded (Tally Sheet)-Day 1"]) || 0) +
+                  (Number(r["HH Recorded (Tally Sheet)-Day 2"]) || 0) +
+                  (Number(r["HH Recorded (Tally Sheet)-Day 3"]) || 0);
+
+        sumTar += (Number(r["Target Day 1"]) || 0) +
+                  (Number(r["Target Day 2"]) || 0) +
+                  (Number(r["Target Day 3"]) || 0);
+
+        sumCov += (Number(r["Covered Day 1"]) || 0) +
+                  (Number(r["Covered Day 2"]) || 0) +
+                  (Number(r["Covered Day 3"]) || 0);
+
+        sumNA += (Number(r["NA Day 1"]) || 0) +
+                 (Number(r["NA Day 2"]) || 0) +
+                 (Number(r["NA Day 3"]) || 0);
+
+        sumNACov += (Number(r["Same Day NA Coverage Day 1"]) || 0) +
+                    (Number(r["Covered in Catch UP-NA Day 1"]) || 0) +
+                    (Number(r["Same Day NA Coverage Day 2"]) || 0) +
+                    (Number(r["Covered in Catch UP-NA Day 2"]) || 0) +
+                    (Number(r["Same Day NA Coverage Day 3"]) || 0) +
+                    (Number(r["Covered in Catch UP-NA Day 3"]) || 0);
+
+        sumZD += (Number(r["Zero Dose Children recorded on TS Day 1"]) || 0) +
+                 (Number(r["Zero Dose Children recorded on TS Day 2"]) || 0) +
+                 (Number(r["Zero Dose Children recorded on TS Day 3"]) || 0);
+
+        sumSch += (Number(r["Schools Coverage Day 1"]) || 0) +
+                  (Number(r["Schools Coverage Day 2"]) || 0) +
+                  (Number(r["Schools Coverage Day 3"]) || 0);
+      });
+
+      const hhPct = sumHHT > 0 ? Math.round((sumHHR / sumHHT) * 100) : 0;
+      const covPct = sumTar > 0 ? Math.round((sumCov / sumTar) * 100) : 0;
+
+      document.getElementById("agg_teams").textContent = count;
+      document.getElementById("agg_hh").textContent = `${sumHHT.toLocaleString()} / ${sumHHR.toLocaleString()}`;
+      document.getElementById("agg_hh_pct").textContent = `${hhPct}% HH Recorded`;
+      document.getElementById("agg_target").textContent = sumTar.toLocaleString();
+      document.getElementById("agg_covered").textContent = sumCov.toLocaleString();
+      document.getElementById("agg_cov_pct").textContent = `${covPct}% Coverage`;
+      document.getElementById("agg_na").textContent = sumNA.toLocaleString();
+      document.getElementById("agg_na_cov").textContent = `${sumNACov.toLocaleString()} NA Covered`;
+      document.getElementById("agg_zd").textContent = sumZD.toLocaleString();
+      document.getElementById("agg_schools").textContent = `${sumSch.toLocaleString()} Schools`;
+
+      renderRecordsList();
+    }
+
+    function renderRecordsList() {
+      const container = document.getElementById("recordsListContainer");
+      const query = (document.getElementById("recordSearchInput").value || "").toLowerCase().trim();
+
+      const filtered = savedRecords.filter(r => {
+        if (!query) return true;
+        return (
+          (r["Team #"] || "").toLowerCase().includes(query) ||
+          (r["UC"] || "").toLowerCase().includes(query) ||
+          (r["Area In-Charge"] || "").toLowerCase().includes(query) ||
+          (r["District"] || "").toLowerCase().includes(query) ||
+          (r["Tehsil"] || "").toLowerCase().includes(query)
+        );
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding: 24px 12px; color: var(--text-muted); font-size: 0.9rem;">
+          ${savedRecords.length === 0 ? "No team entries saved yet. Fill out Steps 1–3 and tap Save." : "No matching records found."}
+        </div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(r => {
+        const t13 = (Number(r["Target Day 1"]) || 0) + (Number(r["Target Day 2"]) || 0) + (Number(r["Target Day 3"]) || 0);
+        const c13 = (Number(r["Covered Day 1"]) || 0) + (Number(r["Covered Day 2"]) || 0) + (Number(r["Covered Day 3"]) || 0);
+        const na13 = (Number(r["NA Day 1"]) || 0) + (Number(r["NA Day 2"]) || 0) + (Number(r["NA Day 3"]) || 0);
+        const zd13 = (Number(r["Zero Dose Children recorded on TS Day 1"]) || 0) + (Number(r["Zero Dose Children recorded on TS Day 2"]) || 0) + (Number(r["Zero Dose Children recorded on TS Day 3"]) || 0);
+        const pct = t13 > 0 ? Math.round((c13 / t13) * 100) : 0;
+
+        return `
+          <div class="record-item">
+            <div class="record-top">
+              <div>
+                <div class="record-team">${escapeHTML(r["Team #"])} <span style="font-weight:500; font-size:0.82rem; color:var(--text-muted);">• UC ${escapeHTML(r["UC"])}</span></div>
+                <div class="record-meta">${escapeHTML(r["District"])} &rsaquo; ${escapeHTML(r["Tehsil"])} ${r["Area In-Charge"] ? `• AIC: ${escapeHTML(r["Area In-Charge"])}` : ""}</div>
+              </div>
+              <span class="col-badge">${pct}% Cov</span>
+            </div>
+            <div class="record-metrics">
+              <div><div style="color:var(--text-light);">Target</div><strong>${t13}</strong></div>
+              <div><div style="color:var(--text-light);">Covered</div><strong>${c13}</strong></div>
+              <div><div style="color:var(--text-light);">NA</div><strong>${na13}</strong></div>
+              <div><div style="color:var(--text-light);">Zero Dose</div><strong>${zd13}</strong></div>
+            </div>
+            <div class="record-actions">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="editRecord('${r._id}')">Edit</button>
+              <button type="button" class="btn btn-danger btn-sm" onclick="confirmDeleteRecord('${r._id}')">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    /* ========================================================================
+       EXPORT (EXACT 46-HEADER CSV, EXCEL TSV COPY, JSON BACKUP/IMPORT)
+       ======================================================================== */
+    function escapeCSVCell(val) {
+      const str = (val === undefined || val === null) ? "" : String(val);
+      if (str.includes('"') || str.includes(",") || str.includes("\n") || str.includes("\r")) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    }
+
+    function exportCSV() {
+      if (savedRecords.length === 0) {
+        showToast("No saved records to export.");
+        return;
+      }
+
+      // Chronological order (oldest first) for clean reporting
+      const ordered = [...savedRecords].reverse();
+      const lines = [];
+      lines.push(EXACT_HEADERS.map(escapeCSVCell).join(","));
+
+      ordered.forEach(rec => {
+        const row = EXACT_HEADERS.map(h => escapeCSVCell(rec[h] !== undefined ? rec[h] : ""));
+        lines.push(row.join(","));
+      });
+
+      // UTF-8 BOM ensures Excel opens special characters properly
+      const csvContent = "\uFEFF" + lines.join("\r\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Campaign_Tally_Data_${dateStr}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast(`Exported ${savedRecords.length} records to CSV`);
+    }
+
+    function copyTSVToClipboard() {
+      if (savedRecords.length === 0) {
+        showToast("No saved records to copy.");
+        return;
+      }
+
+      const ordered = [...savedRecords].reverse();
+      const lines = [];
+      lines.push(EXACT_HEADERS.join("\t"));
+
+      ordered.forEach(rec => {
+        const row = EXACT_HEADERS.map(h => {
+          const v = rec[h] !== undefined && rec[h] !== null ? String(rec[h]) : "";
+          return v.replace(/[\t\r\n]+/g, " ");
+        });
+        lines.push(row.join("\t"));
+      });
+
+      const tsvText = lines.join("\n");
+      const ta = document.createElement("textarea");
+      ta.value = tsvText;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+
+      try {
+        document.execCommand("copy");
+        showToast(`Copied ${savedRecords.length} rows (with 46 headers) for Excel!`);
+      } catch (err) {
+        showToast("Copy failed. Please use Download CSV instead.");
+      }
+      document.body.removeChild(ta);
+    }
+
+    function exportJSON() {
+      if (savedRecords.length === 0) {
+        showToast("No saved records to backup.");
+        return;
+      }
+      const payload = {
+        app: "Campaign Tally & Operational Data Entry",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        headers: EXACT_HEADERS,
+        records: savedRecords
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const dateStr = new Date().toISOString().slice(0, 10);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Campaign_Backup_${dateStr}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showToast("JSON backup downloaded");
+    }
+
+    function importJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          const incoming = Array.isArray(parsed) ? parsed : (parsed.records || []);
+          if (!Array.isArray(incoming) || incoming.length === 0) {
+            showToast("No valid records found in JSON file.");
+            return;
+          }
+
+          let added = 0;
+          const existingIds = new Set(savedRecords.map(r => r._id));
+
+          incoming.forEach(item => {
+            const cleanRec = {
+              _id: item._id && !existingIds.has(item._id) ? item._id : ("imp_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7)),
+              _updatedAt: item._updatedAt || new Date().toISOString()
+            };
+            EXACT_HEADERS.forEach(h => {
+              cleanRec[h] = item[h] !== undefined ? item[h] : "";
+            });
+            savedRecords.unshift(cleanRec);
+            added++;
+          });
+
+          persistRecords();
+          updateRecordsUI();
+          showToast(`Imported ${added} records successfully!`);
+        } catch (err) {
+          showToast("Invalid JSON backup file.");
+        }
+        event.target.value = "";
+      };
+      reader.readAsText(file);
+    }
+
+    /* ========================================================================
+       UTILITIES: TOAST, MODAL & HTML ESCAPING
+       ======================================================================== */
+    function showToast(msg) {
+      const el = document.getElementById("toastNotification");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        el.classList.remove("show");
+      }, 2800);
+    }
+
+    function openModal(title, body, onConfirm) {
+      document.getElementById("modalTitle").textContent = title;
+      document.getElementById("modalBody").textContent = body;
+      const confirmBtn = document.getElementById("modalConfirmBtn");
+      confirmBtn.onclick = () => {
+        closeModal();
+        onConfirm();
+      };
+      document.getElementById("confirmModal").classList.add("open");
+    }
+
+    function closeModal() {
+      document.getElementById("confirmModal").classList.remove("open");
+    }
+
+    function escapeHTML(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+  </script>
+</body>
+</html>
