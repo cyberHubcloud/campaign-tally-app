@@ -1242,11 +1242,6 @@
             </div>
           </div>
 
-          <div class="warning-banner" id="warn_mmp">
-            <span>&#9888;</span>
-            <span id="warn_mmp_text">MMP Covered exceeds MMP Target on one or more days.</span>
-          </div>
-
           <div style="margin-top: 14px; display: flex; justify-content: space-between;">
             <button type="button" class="btn btn-ghost" onclick="switchMainTab('admin')">&larr; Admin</button>
             <button type="button" class="btn btn-secondary" onclick="switchMainTab('coverage')">Next: Coverage &rarr;</button>
@@ -1504,24 +1499,21 @@
         <div class="card">
           <div class="card-header">
             <h2 class="card-title">Export to Phone Memory</h2>
-            <span class="col-badge">2-Sheet Excel + CSV</span>
+            <span class="col-badge">47 Unified Headers</span>
           </div>
           <div class="export-grid">
-            <button type="button" class="btn btn-primary" onclick="exportExcelWorkbook()">
-              &#128202; Download Excel (2 Sheets)
+            <button type="button" class="btn btn-primary" onclick="exportCSV()">
+              &#128229; Download CSV
             </button>
             <button type="button" class="btn btn-primary" style="background: #1d4ed8;" onclick="exportPDF()">
               &#128196; Download PDF
             </button>
-            <button type="button" class="btn btn-secondary" onclick="exportCSV()">
-              &#128229; Download CSV (2 Sections)
-            </button>
-            <button type="button" class="btn btn-secondary" onclick="copyTSVToClipboard()">
-              &#128203; Copy for Excel
+            <button type="button" class="btn btn-secondary btn-full" onclick="copyTSVToClipboard()">
+              &#128203; Copy for Excel (All 47 Headers)
             </button>
           </div>
           <div style="font-size: 0.75rem; color: var(--text-muted);">
-            <strong>2-Sheet Output:</strong> Exports separate <code>Mobile Team Analysis</code> (MT) and <code>Fixed_Transit Data Entry</code> (FT/TT) sheets directly to <code>Documents/CampaignTally/</code> (or Downloads folder in browser).
+            <strong>Phone Memory:</strong> CSV &amp; PDF files save directly to <code>Documents/CampaignTally/</code> (or Downloads folder in browser).
           </div>
           <div class="saved-path-banner" id="savedPathBanner">
             <div style="min-width: 0; word-break: break-word;">
@@ -1563,7 +1555,7 @@
   </footer>
 
   <!-- ========================================================================
-       CUSTOM TOAST & CONFIRMATION MODAL
+       CUSTOM TOAST & CONFIRMATION MODAL (NO alert/confirm)
        ======================================================================== -->
   <div class="toast" id="toastNotification" role="status" aria-live="polite"></div>
 
@@ -1885,6 +1877,10 @@
       return isNaN(parsed) || parsed < 0 ? 0 : parsed;
     }
 
+    function hasVal(id) {
+      return document.getElementById(id).value.trim() !== "";
+    }
+
     function runLiveCalculationsAndValidations() {
       const teamType = document.getElementById("f_Team_Type").value || "MT";
 
@@ -1918,34 +1914,8 @@
       document.getElementById("kpi_hh_rec").textContent = totHHRec.toLocaleString();
       document.getElementById("kpi_hh_diff").textContent = `${hhPct}% (${hhDiff >= 0 ? "+" : ""}${hhDiff})`;
 
-      // 2. MMP Validation
-      let hhTabWarn = false;
-      const mmpYN = document.getElementById("f_MMP_YN").value;
-      const warnMmpEl = document.getElementById("warn_mmp");
-      if (mmpYN === "Y") {
-        const mmpWarnings = [];
-        [1, 2, 3].forEach(d => {
-          const mT = getNum(`f_MMP_D${d}`);
-          const mC = getNum(`f_MMP_Cov_D${d}`);
-          const covInput = document.getElementById(`f_MMP_Cov_D${d}`);
-          if (mC > mT) {
-            mmpWarnings.push(`Day ${d} MMP Covered (${mC}) > MMP (${mT})`);
-            covInput.classList.add("input-warning");
-          } else {
-            covInput.classList.remove("input-warning");
-          }
-        });
-        if (mmpWarnings.length > 0) {
-          document.getElementById("warn_mmp_text").textContent = mmpWarnings.join(" | ");
-          warnMmpEl.classList.add("visible");
-          hhTabWarn = true;
-        } else {
-          warnMmpEl.classList.remove("visible");
-        }
-      } else {
-        warnMmpEl.classList.remove("visible");
-      }
-      document.getElementById("tab-btn-hh").classList.toggle("has-warning", hhTabWarn);
+      // 2. MMP Validations intentionally excluded per user request
+      document.getElementById("tab-btn-hh").classList.remove("has-warning");
 
       // 3. Day 1, Day 2, Day 3 Validations
       let anyCovWarn = false;
@@ -1955,19 +1925,36 @@
         const na = getNum(`f_NA_D${d}`);
         const sdNa = getNum(`f_SameDay_NA_D${d}`);
         const cuNa = getNum(`f_CatchUp_NA_D${d}`);
+        const sch = getNum(`f_Schools_D${d}`);
+        const zd = getNum(`f_ZeroDose_D${d}`);
+
+        const anyEntered = hasVal(`f_Target_D${d}`) || hasVal(`f_Covered_D${d}`) || hasVal(`f_NA_D${d}`);
 
         const msgs = [];
         const covEl = document.getElementById(`f_Covered_D${d}`);
+        const naEl = document.getElementById(`f_NA_D${d}`);
         const sdEl = document.getElementById(`f_SameDay_NA_D${d}`);
         const cuEl = document.getElementById(`f_CatchUp_NA_D${d}`);
+        const schEl = document.getElementById(`f_Schools_D${d}`);
+        const zdEl = document.getElementById(`f_ZeroDose_D${d}`);
 
-        if (c > t && t > 0) {
-          msgs.push(`Covered (${c}) > Target (${t})`);
-          covEl.classList.add("input-warning");
-        } else {
-          covEl.classList.remove("input-warning");
+        let covWarn = false;
+        let naWarn = false;
+
+        // Check 1: Covered Day + NA Day must equal Target Day
+        if (anyEntered && (c + na) !== t) {
+          msgs.push(`Covered (${c}) + NA (${na}) = ${c + na}, must equal Target Day ${d} (${t})`);
+          covWarn = true;
+          naWarn = true;
         }
 
+        // Check 2: Covered Day should not exceed Target Day
+        if (c > t && t > 0) {
+          msgs.push(`Covered (${c}) > Target (${t})`);
+          covWarn = true;
+        }
+
+        // Check 3: Same Day NA Cov + Catch-Up NA Cov cannot exceed NA Day
         if ((sdNa + cuNa) > na) {
           msgs.push(`Total NA Cov (${sdNa + cuNa}) > NA (${na})`);
           sdEl.classList.add("input-warning");
@@ -1976,6 +1963,25 @@
           sdEl.classList.remove("input-warning");
           cuEl.classList.remove("input-warning");
         }
+
+        // Check 4: Schools Coverage cannot exceed Covered Day
+        if (sch > c && (c > 0 || sch > 0)) {
+          msgs.push(`Schools (${sch}) > Covered (${c})`);
+          schEl.classList.add("input-warning");
+        } else {
+          schEl.classList.remove("input-warning");
+        }
+
+        // Check 5: Zero Dose cannot exceed Covered Day
+        if (zd > c && (c > 0 || zd > 0)) {
+          msgs.push(`Zero Dose (${zd}) > Covered (${c})`);
+          zdEl.classList.add("input-warning");
+        } else {
+          zdEl.classList.remove("input-warning");
+        }
+
+        covEl.classList.toggle("input-warning", covWarn);
+        naEl.classList.toggle("input-warning", naWarn);
 
         const warnBanner = document.getElementById(`warn_d${d}`);
         const pillEl = document.getElementById(`pill-d${d}`);
@@ -2582,67 +2588,18 @@
       showSavedPathConfirmation(`Downloads/${fileName}`, null, fileName);
     }
 
-    const FT_TT_HEADERS = [
-      "District",
-      "Tehsil",
-      "UC",
-      "UCMO",
-      "Area In-Charge",
-      "Team #",
-      "Team Type",
-      "Name Team Member 1",
-      "CNIC Team Member 1",
-      "Name Team Member 2",
-      "CNIC Team Member 2",
-      "Covered Day 1",
-      "Covered Day 2",
-      "Covered Day 3",
-      "Covered Catch-UP Day 1"
-    ];
-
-    function getSplitRecords() {
-      const ordered = [...savedRecords].reverse();
-      const mtRecords = ordered.filter(r => (r["Team Type"] || "MT") === "MT");
-      const ftTtRecords = ordered.filter(r => {
-        const t = r["Team Type"] || "MT";
-        return t === "FT" || t === "TT";
-      });
-      return { mtRecords, ftTtRecords };
-    }
-
-    /**
-     * Generates a single CSV file containing two labeled sections:
-     * 1) "Mobile Team Analysis" (MT records with all 47 columns)
-     * 2) "Fixed_Transit Data Entry" (FT & TT records with their 15 relevant columns)
-     * Note: Standard CSV files only support a single flat grid; for native multi-tab
-     * Excel sheets, use exportExcelWorkbook() (.xlsx).
-     */
     async function exportCSV() {
       if (savedRecords.length === 0) {
         showToast("No saved records to export.");
         return;
       }
 
-      const { mtRecords, ftTtRecords } = getSplitRecords();
+      const ordered = [...savedRecords].reverse();
       const lines = [];
-
-      // Sheet / Section 1: Mobile Team Analysis
-      lines.push(escapeCSVCell("Mobile Team Analysis"));
       lines.push(EXACT_HEADERS.map(escapeCSVCell).join(","));
-      mtRecords.forEach(rec => {
+
+      ordered.forEach(rec => {
         const row = EXACT_HEADERS.map(h => escapeCSVCell(rec[h] !== undefined ? rec[h] : ""));
-        lines.push(row.join(","));
-      });
-
-      // Blank separator rows between sections
-      lines.push("");
-      lines.push("");
-
-      // Sheet / Section 2: Fixed_Transit Data Entry
-      lines.push(escapeCSVCell("Fixed_Transit Data Entry"));
-      lines.push(FT_TT_HEADERS.map(escapeCSVCell).join(","));
-      ftTtRecords.forEach(rec => {
-        const row = FT_TT_HEADERS.map(h => escapeCSVCell(rec[h] !== undefined ? rec[h] : ""));
         lines.push(row.join(","));
       });
 
@@ -2655,256 +2612,6 @@
       const fileName = `Campaign_Tally_Data_${dateStr}.csv`;
 
       await saveFileNativeOrWeb(uint8Bytes, fileName, "text/csv;charset=utf-8;");
-    }
-
-    /* ========================================================================
-       ZERO-DEPENDENCY PURE-JS MULTI-SHEET .XLSX (OOXML ZIP) GENERATOR
-       Creates a real multi-tab Excel workbook with two worksheets:
-       1. "Mobile Team Analysis" (MT data only)
-       2. "Fixed_Transit Data Entry" (FT & TT data only)
-       ======================================================================== */
-    function escapeXML(val) {
-      return String(val === undefined || val === null ? "" : val)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&apos;");
-    }
-
-    function colIndexToLetter(idx) {
-      let col = "";
-      let n = idx + 1;
-      while (n > 0) {
-        const rem = (n - 1) % 26;
-        col = String.fromCharCode(65 + rem) + col;
-        n = Math.floor((n - 1) / 26);
-      }
-      return col;
-    }
-
-    function buildWorksheetXML(headers, rows) {
-      const sheetRows = [];
-
-      // Header row (Row 1, style s="1")
-      const headerCells = headers.map((h, cIdx) => {
-        const ref = `${colIndexToLetter(cIdx)}1`;
-        return `<c r="${ref}" t="inlineStr" s="1"><is><t>${escapeXML(h)}</t></is></c>`;
-      }).join("");
-      sheetRows.push(`<row r="1" ht="24" customHeight="1">${headerCells}</row>`);
-
-      // Data rows (Row 2+)
-      rows.forEach((rec, rIdx) => {
-        const rowNum = rIdx + 2;
-        const cells = headers.map((h, cIdx) => {
-          const ref = `${colIndexToLetter(cIdx)}${rowNum}`;
-          const val = rec[h];
-          if (typeof val === "number" && !isNaN(val)) {
-            return `<c r="${ref}" s="2"><v>${val}</v></c>`;
-          }
-          const strVal = (val !== undefined && val !== null) ? String(val) : "";
-          return `<c r="${ref}" t="inlineStr" s="2"><is><t>${escapeXML(strVal)}</t></is></c>`;
-        }).join("");
-        sheetRows.push(`<row r="${rowNum}">${cells}</row>`);
-      });
-
-      const lastCol = colIndexToLetter(Math.max(0, headers.length - 1));
-      const lastRow = Math.max(1, rows.length + 1);
-      const colsXML = headers.map((h, i) => {
-        const width = Math.min(34, Math.max(13, h.length + 4));
-        return `<col min="${i + 1}" max="${i + 1}" width="${width}" customWidth="1"/>`;
-      }).join("");
-
-      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
-        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
-        `<dimension ref="A1:${lastCol}${lastRow}"/>` +
-        `<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>` +
-        `<sheetFormatPr defaultRowHeight="18"/>` +
-        `<cols>${colsXML}</cols>` +
-        `<sheetData>${sheetRows.join("")}</sheetData>` +
-        `</worksheet>`;
-    }
-
-    // Standard CRC32 table for ZIP archive generation
-    const CRC32_TABLE = (() => {
-      const table = new Uint32Array(256);
-      for (let i = 0; i < 256; i++) {
-        let c = i;
-        for (let k = 0; k < 8; k++) {
-          c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
-        }
-        table[i] = c >>> 0;
-      }
-      return table;
-    })();
-
-    function computeCRC32(bytes) {
-      let crc = 0xFFFFFFFF;
-      for (let i = 0; i < bytes.length; i++) {
-        crc = CRC32_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
-      }
-      return (crc ^ 0xFFFFFFFF) >>> 0;
-    }
-
-    function createStoreZip(files) {
-      const encoder = new TextEncoder();
-      const localParts = [];
-      const centralParts = [];
-      let offset = 0;
-
-      files.forEach(file => {
-        const nameBytes = encoder.encode(file.name);
-        const dataBytes = (file.data instanceof Uint8Array) ? file.data : encoder.encode(file.data);
-        const crc = computeCRC32(dataBytes);
-        const size = dataBytes.length;
-
-        // Local file header (30 bytes + name)
-        const localHeader = new Uint8Array(30 + nameBytes.length);
-        const lv = new DataView(localHeader.buffer);
-        lv.setUint32(0, 0x04034b50, true); // signature
-        lv.setUint16(4, 20, true);         // version needed
-        lv.setUint16(6, 0x0800, true);     // UTF-8 filename flag
-        lv.setUint16(8, 0, true);          // compression: STORE (0)
-        lv.setUint16(10, 0, true);         // mod time
-        lv.setUint16(12, 0x0021, true);    // mod date
-        lv.setUint32(14, crc, true);
-        lv.setUint32(18, size, true);
-        lv.setUint32(22, size, true);
-        lv.setUint16(26, nameBytes.length, true);
-        lv.setUint16(28, 0, true);
-        localHeader.set(nameBytes, 30);
-
-        localParts.push(localHeader, dataBytes);
-
-        // Central directory header (46 bytes + name)
-        const centralHeader = new Uint8Array(46 + nameBytes.length);
-        const cv = new DataView(centralHeader.buffer);
-        cv.setUint32(0, 0x02014b50, true); // signature
-        cv.setUint16(4, 20, true);         // version made by
-        cv.setUint16(6, 20, true);         // version needed
-        cv.setUint16(8, 0x0800, true);     // UTF-8 filename flag
-        cv.setUint16(10, 0, true);         // compression: STORE
-        cv.setUint16(12, 0, true);
-        cv.setUint16(14, 0x0021, true);
-        cv.setUint32(16, crc, true);
-        cv.setUint32(20, size, true);
-        cv.setUint32(24, size, true);
-        cv.setUint16(28, nameBytes.length, true);
-        cv.setUint16(30, 0, true);
-        cv.setUint16(32, 0, true);
-        cv.setUint16(34, 0, true);
-        cv.setUint16(36, 0, true);
-        cv.setUint32(38, 0, true);
-        cv.setUint32(42, offset, true);
-        centralHeader.set(nameBytes, 46);
-
-        centralParts.push(centralHeader);
-        offset += localHeader.length + dataBytes.length;
-      });
-
-      const centralDirSize = centralParts.reduce((sum, p) => sum + p.length, 0);
-      const eocd = new Uint8Array(22);
-      const ev = new DataView(eocd.buffer);
-      ev.setUint32(0, 0x06054b50, true);
-      ev.setUint16(4, 0, true);
-      ev.setUint16(6, 0, true);
-      ev.setUint16(8, files.length, true);
-      ev.setUint16(10, files.length, true);
-      ev.setUint32(12, centralDirSize, true);
-      ev.setUint32(16, offset, true);
-      ev.setUint16(20, 0, true);
-
-      const totalLength = offset + centralDirSize + eocd.length;
-      const out = new Uint8Array(totalLength);
-      let pos = 0;
-      localParts.forEach(p => { out.set(p, pos); pos += p.length; });
-      centralParts.forEach(p => { out.set(p, pos); pos += p.length; });
-      out.set(eocd, pos);
-      return out;
-    }
-
-    async function exportExcelWorkbook() {
-      if (savedRecords.length === 0) {
-        showToast("No saved records to export.");
-        return;
-      }
-
-      const { mtRecords, ftTtRecords } = getSplitRecords();
-
-      const sheet1XML = buildWorksheetXML(EXACT_HEADERS, mtRecords);
-      const sheet2XML = buildWorksheetXML(FT_TT_HEADERS, ftTtRecords);
-
-      const contentTypesXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
-        `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
-        `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>` +
-        `<Default Extension="xml" ContentType="application/xml"/>` +
-        `<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>` +
-        `<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>` +
-        `<Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>` +
-        `<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>` +
-        `</Types>`;
-
-      const rootRelsXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
-        `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
-        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>` +
-        `</Relationships>`;
-
-      const workbookXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
-        `<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
-        `<sheets>` +
-        `<sheet name="Mobile Team Analysis" sheetId="1" r:id="rId1"/>` +
-        `<sheet name="Fixed_Transit Data Entry" sheetId="2" r:id="rId2"/>` +
-        `</sheets>` +
-        `</workbook>`;
-
-      const workbookRelsXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
-        `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
-        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>` +
-        `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>` +
-        `<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>` +
-        `</Relationships>`;
-
-      const stylesXML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
-        `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
-        `<fonts count="2">` +
-        `<font><sz val="10"/><name val="Calibri"/></font>` +
-        `<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>` +
-        `</fonts>` +
-        `<fills count="3">` +
-        `<fill><patternFill patternType="none"/></fill>` +
-        `<fill><patternFill patternType="gray125"/></fill>` +
-        `<fill><patternFill patternType="solid"><fgColor rgb="FF0F766E"/><bgColor indexed="64"/></patternFill></fill>` +
-        `</fills>` +
-        `<borders count="2">` +
-        `<border><left/><right/><top/><bottom/><diagonal/></border>` +
-        `<border><left style="thin"><color rgb="FFCBD5E1"/></left><right style="thin"><color rgb="FFCBD5E1"/></right><top style="thin"><color rgb="FFCBD5E1"/></top><bottom style="thin"><color rgb="FFCBD5E1"/></bottom><diagonal/></border>` +
-        `</borders>` +
-        `<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>` +
-        `<cellXfs count="3">` +
-        `<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>` +
-        `<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" alignment="center"/>` +
-        `<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"/>` +
-        `</cellXfs>` +
-        `</styleSheet>`;
-
-      const xlsxBytes = createStoreZip([
-        { name: "[Content_Types].xml", data: contentTypesXML },
-        { name: "_rels/.rels", data: rootRelsXML },
-        { name: "xl/workbook.xml", data: workbookXML },
-        { name: "xl/_rels/workbook.xml.rels", data: workbookRelsXML },
-        { name: "xl/styles.xml", data: stylesXML },
-        { name: "xl/worksheets/sheet1.xml", data: sheet1XML },
-        { name: "xl/worksheets/sheet2.xml", data: sheet2XML }
-      ]);
-
-      const dateStr = new Date().toISOString().slice(0, 10);
-      const fileName = `Campaign_Tally_Data_${dateStr}.xlsx`;
-
-      await saveFileNativeOrWeb(
-        xlsxBytes,
-        fileName,
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      );
     }
 
     /**
@@ -3158,7 +2865,7 @@
 
       try {
         document.execCommand("copy");
-        showToast(`Copied ${savedRecords.length} rows (with 46 headers) for Excel!`);
+        showToast(`Copied ${savedRecords.length} rows (with 47 headers) for Excel!`);
       } catch (err) {
         showToast("Copy failed. Please use Download CSV instead.");
       }
