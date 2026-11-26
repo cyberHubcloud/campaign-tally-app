@@ -744,6 +744,28 @@
       margin-bottom: 12px;
     }
 
+    .export-grid .btn-full {
+      grid-column: 1 / -1;
+    }
+
+    .saved-path-banner {
+      background: var(--success-soft);
+      border: 1px solid var(--success);
+      color: var(--text-main);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-size: 0.8rem;
+      margin-top: 10px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .saved-path-banner.visible {
+      display: flex;
+    }
+
     .record-item {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
@@ -1383,26 +1405,29 @@
         <!-- Export & Backup Controls -->
         <div class="card">
           <div class="card-header">
-            <h2 class="card-title">Export &amp; Data Transfer</h2>
+            <h2 class="card-title">Export to Phone Memory</h2>
             <span class="col-badge">46 Exact Headers</span>
           </div>
           <div class="export-grid">
             <button type="button" class="btn btn-primary" onclick="exportCSV()">
               &#128229; Download CSV
             </button>
-            <button type="button" class="btn btn-secondary" onclick="copyTSVToClipboard()">
-              &#128203; Copy for Excel
+            <button type="button" class="btn btn-primary" style="background: #1d4ed8;" onclick="exportPDF()">
+              &#128196; Download PDF
             </button>
-            <button type="button" class="btn btn-ghost" onclick="exportJSON()">
-              &#128190; Backup JSON
-            </button>
-            <button type="button" class="btn btn-ghost" onclick="document.getElementById('jsonImportInput').click()">
-              &#128194; Import JSON
+            <button type="button" class="btn btn-secondary btn-full" onclick="copyTSVToClipboard()">
+              &#128203; Copy for Excel (All 46 Headers)
             </button>
           </div>
-          <input type="file" id="jsonImportInput" accept=".json,application/json" style="display: none;" onchange="importJSON(event)" />
           <div style="font-size: 0.75rem; color: var(--text-muted);">
-            <strong>Tip:</strong> "Copy for Excel" copies tab-separated rows with all 46 headers so you can paste directly into an open Excel sheet.
+            <strong>Phone Memory:</strong> CSV &amp; PDF files save directly to <code>Documents/CampaignTally/</code> (or Downloads folder in browser).
+          </div>
+          <div class="saved-path-banner" id="savedPathBanner">
+            <div style="min-width: 0; word-break: break-word;">
+              <strong style="color: var(--success);">&#10003; Saved to Phone Memory:</strong><br />
+              <span id="savedPathText" style="font-family: monospace; font-size: 0.76rem;"></span>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnShareSavedFile" style="flex-shrink: 0;">Share</button>
           </div>
         </div>
 
@@ -2037,7 +2062,7 @@
       }
       openModal(
         "Clear All Saved Records?",
-        `Are you sure you want to permanently delete all ${savedRecords.length} saved team entries? Export a CSV or JSON backup first!`,
+        `Are you sure you want to permanently delete all ${savedRecords.length} saved team entries? Download a CSV or PDF first!`,
         () => {
           savedRecords = [];
           exitEditModeState();
@@ -2176,7 +2201,7 @@
     }
 
     /* ========================================================================
-       EXPORT (EXACT 46-HEADER CSV, EXCEL TSV COPY, JSON BACKUP/IMPORT)
+       EXPORT: DIRECT PHONE MEMORY SAVE (CSV & A4 LANDSCAPE PDF) + EXCEL TSV
        ======================================================================== */
     function escapeCSVCell(val) {
       const str = (val === undefined || val === null) ? "" : String(val);
@@ -2186,13 +2211,128 @@
       return str;
     }
 
-    function exportCSV() {
+    function uint8ToBase64(uint8Array) {
+      let binary = "";
+      const chunkSize = 0x8000;
+      for (let i = 0; i < uint8Array.length; i += chunkSize) {
+        const chunk = uint8Array.subarray(i, i + chunkSize);
+        binary += String.fromCharCode.apply(null, chunk);
+      }
+      return btoa(binary);
+    }
+
+    function showSavedPathConfirmation(displayPath, fileUri, fileName) {
+      const banner = document.getElementById("savedPathBanner");
+      const pathText = document.getElementById("savedPathText");
+      const shareBtn = document.getElementById("btnShareSavedFile");
+
+      pathText.textContent = displayPath;
+      banner.classList.add("visible");
+
+      const cap = window.Capacitor;
+      const SharePlugin = cap && cap.Plugins && cap.Plugins.Share;
+
+      if (SharePlugin && fileUri) {
+        shareBtn.style.display = "inline-flex";
+        shareBtn.onclick = async () => {
+          try {
+            await SharePlugin.share({
+              title: fileName,
+              url: fileUri,
+              dialogTitle: "Share " + fileName
+            });
+          } catch (err) {
+            showToast("Share cancelled.");
+          }
+        };
+      } else {
+        shareBtn.style.display = "none";
+      }
+
+      showToast(`Saved: ${displayPath}`);
+    }
+
+    /**
+     * Saves binary Uint8Array directly to Android Phone Memory (Documents/CampaignTally or Download/CampaignTally)
+     * using Capacitor Filesystem, with seamless fallback to browser download.
+     */
+    async function saveFileNativeOrWeb(uint8Bytes, fileName, mimeType) {
+      const cap = window.Capacitor;
+      const Filesystem = cap && cap.Plugins && cap.Plugins.Filesystem;
+
+      if (Filesystem && typeof Filesystem.writeFile === "function") {
+        const base64Data = uint8ToBase64(uint8Bytes);
+
+        // Request storage permissions if exposed on Android < 11
+        if (typeof Filesystem.requestPermissions === "function") {
+          try {
+            await Filesystem.requestPermissions();
+          } catch (e) {
+            // Proceed to Scoped Storage Documents directory
+          }
+        }
+
+        // Priority 1: Public Documents/CampaignTally (Android 10+ Scoped Storage compliant & user-visible)
+        try {
+          const docPath = `CampaignTally/${fileName}`;
+          const res = await Filesystem.writeFile({
+            path: docPath,
+            data: base64Data,
+            directory: "DOCUMENTS",
+            recursive: true
+          });
+          showSavedPathConfirmation(`Phone Storage/Documents/${docPath}`, res.uri, fileName);
+          return;
+        } catch (docErr) {
+          // Priority 2: ExternalStorage Download/CampaignTally
+          try {
+            const dlPath = `Download/CampaignTally/${fileName}`;
+            const resExt = await Filesystem.writeFile({
+              path: dlPath,
+              data: base64Data,
+              directory: "EXTERNAL_STORAGE",
+              recursive: true
+            });
+            showSavedPathConfirmation(`Internal Storage/${dlPath}`, resExt.uri, fileName);
+            return;
+          } catch (extErr) {
+            // Priority 3: App Cache fallback
+            try {
+              const cacheRes = await Filesystem.writeFile({
+                path: fileName,
+                data: base64Data,
+                directory: "CACHE"
+              });
+              showSavedPathConfirmation(`App Storage/${fileName}`, cacheRes.uri, fileName);
+              return;
+            } catch (cacheErr) {
+              showToast("Storage write error: " + (cacheErr.message || "Permission denied"));
+              return;
+            }
+          }
+        }
+      }
+
+      // Standard Mobile/Desktop Web Browser Download Fallback
+      const blob = new Blob([uint8Bytes], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+
+      showSavedPathConfirmation(`Downloads/${fileName}`, null, fileName);
+    }
+
+    async function exportCSV() {
       if (savedRecords.length === 0) {
         showToast("No saved records to export.");
         return;
       }
 
-      // Chronological order (oldest first) for clean reporting
       const ordered = [...savedRecords].reverse();
       const lines = [];
       lines.push(EXACT_HEADERS.map(escapeCSVCell).join(","));
@@ -2202,21 +2342,236 @@
         lines.push(row.join(","));
       });
 
-      // UTF-8 BOM ensures Excel opens special characters properly
-      const csvContent = "\uFEFF" + lines.join("\r\n");
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
+      // UTF-8 BOM + CSV rows encoded cleanly to Uint8Array
+      const csvString = "\uFEFF" + lines.join("\r\n");
+      const encoder = new TextEncoder();
+      const uint8Bytes = encoder.encode(csvString);
 
       const dateStr = new Date().toISOString().slice(0, 10);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Campaign_Tally_Data_${dateStr}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const fileName = `Campaign_Tally_Data_${dateStr}.csv`;
 
-      showToast(`Exported ${savedRecords.length} records to CSV`);
+      await saveFileNativeOrWeb(uint8Bytes, fileName, "text/csv;charset=utf-8;");
+    }
+
+    /**
+     * Zero-Dependency Pure-JS A4 Landscape PDF Generator (842 x 595 pt)
+     * Builds a valid multi-page PDF 1.4 document with vector tables, all 46 columns
+     * grouped cleanly across two horizontal tables per page, and campaign summary totals.
+     */
+    async function exportPDF() {
+      if (savedRecords.length === 0) {
+        showToast("No saved records to export.");
+        return;
+      }
+
+      const ordered = [...savedRecords].reverse();
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const fileName = `Campaign_Tally_Report_${dateStr}.pdf`;
+
+      const pdfBytes = buildCampaignPDFBytes(ordered, dateStr);
+      await saveFileNativeOrWeb(pdfBytes, fileName, "application/pdf");
+    }
+
+    function pdfEscapeText(str) {
+      return String(str === undefined || str === null ? "" : str)
+        .replace(/[^\x20-\x7E]/g, " ")
+        .replace(/\\/g, "\\\\")
+        .replace(/\(/g, "\\(")
+        .replace(/\)/g, "\\)");
+    }
+
+    function buildCampaignPDFBytes(records, dateStr) {
+      // A4 Landscape dimensions in points: 842 x 595
+      const pageW = 842;
+      const pageH = 595;
+      const margin = 24;
+      const usableW = pageW - margin * 2; // 794 pt
+
+      // Part A columns (Cols 1-23: Admin, Team, CNICs, HH Target/Rec, MMP)
+      const colsPartA = [
+        { h: "District", label: "District", w: 46 },
+        { h: "Tehsil", label: "Tehsil", w: 44 },
+        { h: "UC", label: "UC", w: 38 },
+        { h: "UCMO", label: "UCMO", w: 44 },
+        { h: "Area In-Charge", label: "AIC", w: 46 },
+        { h: "Team #", label: "Team#", w: 36 },
+        { h: "Name Team Member 1", label: "Member 1", w: 54 },
+        { h: "CNIC Team Member 1", label: "CNIC 1", w: 62 },
+        { h: "Name Team Member 2", label: "Member 2", w: 54 },
+        { h: "CNIC Team Member 2", label: "CNIC 2", w: 62 },
+        { h: "HH Target (Operational Sheet)-Day 1", label: "HHT1", w: 23 },
+        { h: "HH Target (Operational Sheet)-Day 2", label: "HHT2", w: 23 },
+        { h: "HH Target (Operational Sheet)-Day 3", label: "HHT3", w: 23 },
+        { h: "HH Recorded (Tally Sheet)-Day 1", label: "HHR1", w: 23 },
+        { h: "HH Recorded (Tally Sheet)-Day 2", label: "HHR2", w: 23 },
+        { h: "HH Recorded (Tally Sheet)-Day 3", label: "HHR3", w: 23 },
+        { h: "MMP (Y/N)", label: "MMP", w: 22 },
+        { h: "MMP Day 1", label: "MD1", w: 24 },
+        { h: "MMP Covered Day 1", label: "MC1", w: 24 },
+        { h: "MMP Day 2", label: "MD2", w: 24 },
+        { h: "MMP Covered Day 2", label: "MC2", w: 24 },
+        { h: "MMP Day 3", label: "MD3", w: 24 },
+        { h: "MMP Covered Day 3", label: "MC3", w: 28 }
+      ];
+
+      // Part B columns (Team # reference + Cols 24-46: Day 1, Day 2, Day 3 & Catch-Up)
+      const colsPartB = [
+        { h: "Team #", label: "Team#", w: 46 },
+        { h: "Target Day 1", label: "T-D1", w: 31 },
+        { h: "Covered Day 1", label: "C-D1", w: 31 },
+        { h: "NA Day 1", label: "NA1", w: 28 },
+        { h: "Same Day NA Coverage Day 1", label: "SD1", w: 28 },
+        { h: "Covered in Catch UP-NA Day 1", label: "CU-NA1", w: 33 },
+        { h: "Schools Coverage Day 1", label: "Sch1", w: 30 },
+        { h: "Zero Dose Children recorded on TS Day 1", label: "ZD1", w: 28 },
+        { h: "Target Day 2", label: "T-D2", w: 31 },
+        { h: "Covered Day 2", label: "C-D2", w: 31 },
+        { h: "NA Day 2", label: "NA2", w: 28 },
+        { h: "Same Day NA Coverage Day 2", label: "SD2", w: 28 },
+        { h: "Covered in Catch UP-NA Day 2", label: "CU-NA2", w: 33 },
+        { h: "Schools Coverage Day 2", label: "Sch2", w: 30 },
+        { h: "Zero Dose Children recorded on TS Day 2", label: "ZD2", w: 28 },
+        { h: "Target Day 3", label: "T-D3", w: 31 },
+        { h: "Covered Day 3", label: "C-D3", w: 31 },
+        { h: "NA Day 3", label: "NA3", w: 28 },
+        { h: "Same Day NA Coverage Day 3", label: "SD3", w: 28 },
+        { h: "Covered in Catch UP-NA Day 3", label: "CU-NA3", w: 33 },
+        { h: "Schools Coverage Day 3", label: "Sch3", w: 30 },
+        { h: "Zero Dose Children recorded on TS Day 3", label: "ZD3", w: 28 },
+        { h: "Covered Catch-UP Day 1", label: "CovCU1", w: 39 },
+        { h: "Target Catch-UP Day 1", label: "TarCU1", w: 42 }
+      ];
+
+      // Compute aggregate totals row
+      const totalsRow = { "District": "TOTAL", "Team #": `${records.length} Teams` };
+      EXACT_HEADERS.forEach(h => {
+        if (typeof records[0][h] === "number") {
+          totalsRow[h] = records.reduce((acc, r) => acc + (Number(r[h]) || 0), 0);
+        }
+      });
+
+      const rowsWithTotals = [...records, totalsRow];
+      const rowsPerPage = 22;
+      const pagesContent = [];
+
+      function renderTablePages(colsSpec, sectionTitle) {
+        for (let start = 0; start < rowsWithTotals.length; start += rowsPerPage) {
+          const slice = rowsWithTotals.slice(start, start + rowsPerPage);
+          const ops = [];
+
+          // Header Banner
+          ops.push("0.06 0.46 0.43 rg");
+          ops.push(`${margin} ${pageH - 46} ${usableW} 24 re f`);
+          ops.push("1 1 1 rg");
+          ops.push("BT /F2 11 Tf");
+          ops.push(`${margin + 8} ${pageH - 38} Td (${pdfEscapeText("CAMPAIGN TALLY & OPERATIONAL REPORT - " + sectionTitle)}) Tj ET`);
+          ops.push("BT /F1 8.5 Tf");
+          ops.push(`${pageW - margin - 165} ${pageH - 38} Td (${pdfEscapeText("Date: " + dateStr + " | Teams: " + records.length)}) Tj ET`);
+
+          // Table Column Header Row
+          let y = pageH - 66;
+          const rowH = 19;
+          ops.push("0.88 0.93 0.94 rg");
+          ops.push(`${margin} ${y} ${usableW} ${rowH} re f`);
+          ops.push("0.4 0.5 0.55 RG 0.5 w");
+          ops.push(`${margin} ${y} ${usableW} ${rowH} re S`);
+
+          let x = margin;
+          ops.push("0.06 0.1 0.16 rg");
+          colsSpec.forEach(col => {
+            ops.push(`${x} ${y} m ${x} ${y + rowH} l S`);
+            ops.push(`BT /F2 6.5 Tf ${x + 2} ${y + 6} Td (${pdfEscapeText(col.label)}) Tj ET`);
+            x += col.w;
+          });
+
+          // Data Rows
+          slice.forEach((rec, idx) => {
+            y -= rowH;
+            const isTotalRow = (start + idx === rowsWithTotals.length - 1);
+
+            if (isTotalRow) {
+              ops.push("0.80 0.98 0.94 rg");
+              ops.push(`${margin} ${y} ${usableW} ${rowH} re f`);
+            } else if (idx % 2 === 1) {
+              ops.push("0.97 0.98 0.99 rg");
+              ops.push(`${margin} ${y} ${usableW} ${rowH} re f`);
+            }
+
+            ops.push("0.75 0.8 0.85 RG 0.4 w");
+            ops.push(`${margin} ${y} ${usableW} ${rowH} re S`);
+
+            let cx = margin;
+            ops.push("0.08 0.1 0.15 rg");
+            colsSpec.forEach(col => {
+              ops.push(`${cx} ${y} m ${cx} ${y + rowH} l S`);
+              let rawVal = rec[col.h] !== undefined && rec[col.h] !== null ? String(rec[col.h]) : "";
+              const maxChars = Math.max(3, Math.floor((col.w - 3) / 3.4));
+              if (rawVal.length > maxChars) {
+                rawVal = rawVal.slice(0, maxChars - 1) + ".";
+              }
+              const fontTag = isTotalRow ? "/F2" : "/F1";
+              ops.push(`BT ${fontTag} 6.2 Tf ${cx + 2} ${y + 6} Td (${pdfEscapeText(rawVal)}) Tj ET`);
+              cx += col.w;
+            });
+          });
+
+          // Footer
+          ops.push("0.4 0.45 0.5 rg");
+          ops.push(`BT /F1 7.5 Tf ${margin} 14 Td (${pdfEscapeText("Generated Offline by Campaign Tally App | Exact 46-Column Schema")}) Tj ET`);
+          pagesContent.push(ops.join("\n"));
+        }
+      }
+
+      renderTablePages(colsPartA, "PART 1: ADMIN, TEAM, HH & MMP (COLS 1-23)");
+      renderTablePages(colsPartB, "PART 2: DAY 1-3 & CATCH-UP COVERAGE (COLS 24-46)");
+
+      // Assemble valid PDF 1.4 byte structure
+      const objects = [];
+      const addObj = (body) => {
+        objects.push(body);
+        return objects.length;
+      };
+
+      const catalogId = addObj(""); // placeholder 1
+      const pagesId = addObj("");   // placeholder 2
+      const fontRegularId = addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+      const fontBoldId = addObj("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>");
+
+      const pageIds = [];
+      pagesContent.forEach(streamStr => {
+        const contentId = addObj(`<< /Length ${streamStr.length} >>\nstream\n${streamStr}\nendstream`);
+        const pageId = addObj(
+          `<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${pageW} ${pageH}] ` +
+          `/Resources << /Font << /F1 ${fontRegularId} 0 R /F2 ${fontBoldId} 0 R >> >> ` +
+          `/Contents ${contentId} 0 R >>`
+        );
+        pageIds.push(pageId);
+      });
+
+      objects[catalogId - 1] = `<< /Type /Catalog /Pages ${pagesId} 0 R >>`;
+      objects[pagesId - 1] = `<< /Type /Pages /Kids [${pageIds.map(id => `${id} 0 R`).join(" ")}] /Count ${pageIds.length} >>`;
+
+      let pdf = "%PDF-1.4\n";
+      const offsets = [0];
+      for (let i = 0; i < objects.length; i++) {
+        offsets.push(pdf.length);
+        pdf += `${i + 1} 0 obj\n${objects[i]}\nendobj\n`;
+      }
+
+      const xrefStart = pdf.length;
+      pdf += `xref\n0 ${objects.length + 1}\n`;
+      pdf += "0000000000 65535 f \n";
+      for (let i = 1; i <= objects.length; i++) {
+        pdf += String(offsets[i]).padStart(10, "0") + " 00000 n \n";
+      }
+
+      pdf += `trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+
+      const outBytes = new Uint8Array(pdf.length);
+      for (let i = 0; i < pdf.length; i++) {
+        outBytes[i] = pdf.charCodeAt(i) & 0xff;
+      }
+      return outBytes;
     }
 
     function copyTSVToClipboard() {
@@ -2252,73 +2607,6 @@
         showToast("Copy failed. Please use Download CSV instead.");
       }
       document.body.removeChild(ta);
-    }
-
-    function exportJSON() {
-      if (savedRecords.length === 0) {
-        showToast("No saved records to backup.");
-        return;
-      }
-      const payload = {
-        app: "Campaign Tally & Operational Data Entry",
-        version: 1,
-        exportedAt: new Date().toISOString(),
-        headers: EXACT_HEADERS,
-        records: savedRecords
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const dateStr = new Date().toISOString().slice(0, 10);
-
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Campaign_Backup_${dateStr}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      showToast("JSON backup downloaded");
-    }
-
-    function importJSON(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const parsed = JSON.parse(e.target.result);
-          const incoming = Array.isArray(parsed) ? parsed : (parsed.records || []);
-          if (!Array.isArray(incoming) || incoming.length === 0) {
-            showToast("No valid records found in JSON file.");
-            return;
-          }
-
-          let added = 0;
-          const existingIds = new Set(savedRecords.map(r => r._id));
-
-          incoming.forEach(item => {
-            const cleanRec = {
-              _id: item._id && !existingIds.has(item._id) ? item._id : ("imp_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7)),
-              _updatedAt: item._updatedAt || new Date().toISOString()
-            };
-            EXACT_HEADERS.forEach(h => {
-              cleanRec[h] = item[h] !== undefined ? item[h] : "";
-            });
-            savedRecords.unshift(cleanRec);
-            added++;
-          });
-
-          persistRecords();
-          updateRecordsUI();
-          showToast(`Imported ${added} records successfully!`);
-        } catch (err) {
-          showToast("Invalid JSON backup file.");
-        }
-        event.target.value = "";
-      };
-      reader.readAsText(file);
     }
 
     /* ========================================================================
