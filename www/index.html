@@ -5,69 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0f766e" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Campaign Tally & Operational Data Entry</title>
+  <title>Campaign Tally Sheet — Field Data Entry</title>
   <style>
-    /* ==========================================================================
-       1. DESIGN TOKENS & ZERO-DEPENDENCY SYSTEM RESET (OFFLINE / APK READY)
-       ========================================================================== */
+    /* ========================================================================
+       DESIGN TOKENS & MOBILE-FIRST RESET
+       ======================================================================== */
     :root {
+      --primary: #0f766e;
+      --primary-dark: #115e59;
+      --primary-light: #ccfbf1;
+      --primary-soft: #f0fdfa;
+      --accent: #0284c7;
       --bg-app: #f1f5f9;
       --bg-card: #ffffff;
       --bg-subtle: #f8fafc;
-      --bg-input: #ffffff;
-      --border-color: #cbd5e1;
-      --border-focus: #0d9488;
       --text-main: #0f172a;
       --text-muted: #475569;
-      --text-light: #64748b;
-      --primary: #0f766e;
-      --primary-hover: #115e59;
-      --primary-soft: #ccfbf1;
-      --primary-text: #134e4a;
-      --accent: #2563eb;
-      --accent-soft: #dbeafe;
+      --text-light: #94a3b8;
+      --border: #cbd5e1;
+      --border-focus: #0f766e;
+      --success: #15803d;
+      --success-bg: #dcfce7;
+      --warning: #b45309;
       --warning-bg: #fef3c7;
       --warning-border: #f59e0b;
-      --warning-text: #92400e;
-      --danger: #dc2626;
-      --danger-soft: #fee2e2;
-      --success: #16a34a;
-      --success-soft: #dcfce7;
-      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-      --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
-      --radius-sm: 8px;
-      --radius-md: 12px;
-      --radius-lg: 16px;
-      --header-height: 60px;
-      --bottom-nav-height: 72px;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg-app: #0b1120;
-        --bg-card: #1e293b;
-        --bg-subtle: #0f172a;
-        --bg-input: #0f172a;
-        --border-color: #334155;
-        --border-focus: #2dd4bf;
-        --text-main: #f8fafc;
-        --text-muted: #cbd5e1;
-        --text-light: #94a3b8;
-        --primary: #0d9488;
-        --primary-hover: #14b8a6;
-        --primary-soft: #134e4a;
-        --primary-text: #99f6e4;
-        --accent: #3b82f6;
-        --accent-soft: #1e3a8a;
-        --warning-bg: #451a03;
-        --warning-border: #d97706;
-        --warning-text: #fde68a;
-        --danger: #ef4444;
-        --danger-soft: #450a0a;
-        --success: #22c55e;
-        --success-soft: #052e16;
-      }
+      --danger: #b91c1c;
+      --danger-bg: #fee2e2;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --radius-sm: 7px;
+      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+      --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.1);
+      --header-h: 58px;
+      --tabs-h: 52px;
+      --bottom-h: 68px;
     }
 
     * {
@@ -82,46 +53,41 @@
       background-color: var(--bg-app);
       color: var(--text-main);
       font-size: 16px;
-      line-height: 1.4;
+      line-height: 1.45;
       overflow-x: hidden;
-      width: 100%;
     }
 
-    /* ==========================================================================
-       2. TOP APP BAR & NAVIGATION TABS
-       ========================================================================== */
+    /* ========================================================================
+       STICKY HEADER & 4-TAB NAVIGATION
+       ======================================================================== */
     .app-header {
       position: sticky;
       top: 0;
-      z-index: 40;
-      background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
+      z-index: 100;
+      height: var(--header-h);
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
       color: #ffffff;
-      padding: 10px 14px;
-      box-shadow: var(--shadow-md);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      padding: 0 14px;
+      box-shadow: var(--shadow-md);
     }
 
     .app-title-group {
       display: flex;
       flex-direction: column;
-      min-width: 0;
     }
 
     .app-title {
       font-size: 1.05rem;
       font-weight: 700;
-      margin: 0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       letter-spacing: -0.01em;
+      margin: 0;
     }
 
     .app-subtitle {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       opacity: 0.9;
       display: flex;
       align-items: center;
@@ -129,8 +95,8 @@
     }
 
     .status-dot {
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background-color: #4ade80;
       display: inline-block;
@@ -140,13 +106,12 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      flex-shrink: 0;
     }
 
     .badge-btn {
       background: rgba(255, 255, 255, 0.18);
+      color: #fff;
       border: 1px solid rgba(255, 255, 255, 0.3);
-      color: #ffffff;
       border-radius: 999px;
       padding: 6px 12px;
       font-size: 0.8rem;
@@ -155,33 +120,26 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      transition: background 0.15s ease;
     }
 
-    .badge-btn:active {
-      background: rgba(255, 255, 255, 0.3);
-    }
-
-    .count-pill {
+    .badge-btn .count-pill {
       background: #ffffff;
-      color: #0f766e;
+      color: var(--primary-dark);
       border-radius: 999px;
       padding: 1px 7px;
       font-size: 0.75rem;
       font-weight: 800;
     }
 
-    /* Main Stepper / Section Tabs */
     .main-tabs {
       position: sticky;
-      top: 56px;
-      z-index: 35;
+      top: var(--header-h);
+      z-index: 95;
+      height: var(--tabs-h);
       background: var(--bg-card);
-      border-bottom: 1px solid var(--border-color);
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      padding: 6px;
-      gap: 6px;
+      border-bottom: 1px solid var(--border);
       box-shadow: var(--shadow-sm);
     }
 
@@ -190,44 +148,44 @@
     }
 
     .tab-btn {
+      background: none;
       border: none;
-      background: transparent;
+      border-bottom: 3px solid transparent;
       color: var(--text-muted);
-      padding: 8px 4px;
-      border-radius: var(--radius-sm);
       font-size: 0.78rem;
       font-weight: 600;
+      padding: 6px 4px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 3px;
-      transition: all 0.15s ease;
+      gap: 2px;
       position: relative;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn .tab-step {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      opacity: 0.75;
     }
 
     .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
       background: var(--primary-soft);
-      color: var(--primary-text);
-      font-weight: 700;
-    }
-
-    .tab-step {
-      font-size: 0.68rem;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      opacity: 0.8;
     }
 
     .tab-warn-dot {
       position: absolute;
-      top: 5px;
-      right: 8px;
-      width: 7px;
-      height: 7px;
+      top: 6px;
+      right: 10px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
-      background: var(--warning-border);
+      background-color: var(--warning-border);
       display: none;
     }
 
@@ -235,37 +193,18 @@
       display: block;
     }
 
-    /* ==========================================================================
-       3. MAIN CONTAINER, CARDS & FORM ELEMENTS
-       ========================================================================== */
+    /* ========================================================================
+       MAIN CONTAINER & CARDS
+       ======================================================================== */
     .container {
-      width: 100%;
-      max-width: 820px;
+      max-width: 720px;
       margin: 0 auto;
-      padding: 12px 12px 110px 12px;
-    }
-
-    .edit-banner {
-      background: var(--accent-soft);
-      border: 1px solid var(--accent);
-      color: var(--text-main);
-      padding: 10px 14px;
-      border-radius: var(--radius-md);
-      margin-bottom: 12px;
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      font-size: 0.85rem;
-    }
-
-    .edit-banner.visible {
-      display: flex;
+      padding: 12px 12px calc(var(--bottom-h) + 24px);
     }
 
     .section-panel {
       display: none;
-      animation: fadeIn 0.18s ease-out;
+      animation: fadeIn 0.18s ease;
     }
 
     .section-panel.active {
@@ -279,50 +218,68 @@
 
     .card {
       background: var(--bg-card);
-      border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
       padding: 14px;
       margin-bottom: 12px;
       box-shadow: var(--shadow-sm);
+      border: 1px solid #e2e8f0;
     }
 
     .card-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
       margin-bottom: 12px;
       padding-bottom: 8px;
-      border-bottom: 1px solid var(--border-color);
+      border-bottom: 1px solid #f1f5f9;
     }
 
     .card-title {
-      font-size: 0.98rem;
+      font-size: 0.95rem;
       font-weight: 700;
-      margin: 0;
       color: var(--text-main);
+      margin: 0;
       display: flex;
       align-items: center;
       gap: 6px;
     }
 
     .col-badge {
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       font-weight: 600;
-      background: var(--bg-subtle);
-      color: var(--text-muted);
-      border: 1px solid var(--border-color);
-      padding: 2px 7px;
+      color: var(--primary-dark);
+      background: var(--primary-light);
+      padding: 2px 8px;
       border-radius: 999px;
     }
 
-    /* Sticky Context Switch */
+    /* ========================================================================
+       EDIT MODE BANNER & STICKY TOGGLE
+       ======================================================================== */
+    .edit-banner {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      color: #92400e;
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.85rem;
+    }
+
+    .edit-banner.visible {
+      display: flex;
+    }
+
     .toggle-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: var(--bg-subtle);
-      border: 1px solid var(--border-color);
+      background: var(--primary-soft);
+      border: 1px solid #99f6e4;
       border-radius: var(--radius-md);
       padding: 10px 12px;
       margin-bottom: 12px;
@@ -335,8 +292,9 @@
     }
 
     .toggle-title {
-      font-size: 0.86rem;
+      font-size: 0.85rem;
       font-weight: 700;
+      color: var(--primary-dark);
     }
 
     .toggle-desc {
@@ -347,8 +305,8 @@
     .switch {
       position: relative;
       display: inline-block;
-      width: 48px;
-      height: 28px;
+      width: 46px;
+      height: 26px;
       flex-shrink: 0;
     }
 
@@ -362,22 +320,22 @@
       position: absolute;
       cursor: pointer;
       inset: 0;
-      background-color: #94a3b8;
+      background-color: #cbd5e1;
       transition: 0.2s;
-      border-radius: 34px;
+      border-radius: 999px;
     }
 
     .slider:before {
       position: absolute;
       content: "";
-      height: 22px;
-      width: 22px;
+      height: 20px;
+      width: 20px;
       left: 3px;
       bottom: 3px;
       background-color: white;
       transition: 0.2s;
       border-radius: 50%;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
     }
 
     input:checked + .slider {
@@ -388,19 +346,18 @@
       transform: translateX(20px);
     }
 
-    /* Responsive Form Grids */
+    /* ========================================================================
+       FORM INPUTS, GRIDS & TOUCH TARGETS
+       ======================================================================== */
     .form-grid {
       display: grid;
       grid-template-columns: 1fr;
       gap: 12px;
     }
 
-    @media (min-width: 560px) {
+    @media (min-width: 520px) {
       .form-grid.cols-2 {
         grid-template-columns: repeat(2, 1fr);
-      }
-      .form-grid.cols-3 {
-        grid-template-columns: repeat(3, 1fr);
       }
     }
 
@@ -423,17 +380,17 @@
     }
 
     .field-label {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       color: var(--text-muted);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 4px;
     }
 
     .field-label .req {
       color: var(--danger);
+      margin-left: 2px;
     }
 
     .field-input, .field-select {
@@ -441,51 +398,52 @@
       min-height: 46px;
       padding: 10px 12px;
       font-size: 1rem;
-      font-weight: 500;
+      font-family: inherit;
       color: var(--text-main);
-      background-color: var(--bg-input);
-      border: 1.5px solid var(--border-color);
+      background-color: #ffffff;
+      border: 1.5px solid var(--border);
       border-radius: var(--radius-sm);
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
       appearance: none;
     }
 
     .field-input:focus, .field-select:focus {
       outline: none;
       border-color: var(--border-focus);
-      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.18);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+    }
+
+    .field-input:disabled {
+      background-color: #f1f5f9;
+      color: #94a3b8;
+      border-color: #e2e8f0;
+      cursor: not-allowed;
     }
 
     .field-input.num-input {
-      font-variant-numeric: tabular-nums;
-      font-weight: 700;
       text-align: center;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
       padding: 10px 6px;
     }
 
     .field-input.input-warning {
       border-color: var(--warning-border);
-      background-color: var(--warning-bg);
+      background-color: #fffbeb;
     }
 
     .field-input.input-valid {
-      border-color: var(--success);
+      border-color: #22c55e;
     }
 
     .field-input.input-invalid {
-      border-color: var(--danger);
-    }
-
-    .field-input:disabled {
-      opacity: 0.5;
-      background-color: var(--bg-subtle);
-      cursor: not-allowed;
+      border-color: #ef4444;
+      background-color: #fef2f2;
     }
 
     .field-hint {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       color: var(--text-light);
-      min-height: 15px;
     }
 
     .field-hint.error {
@@ -498,90 +456,89 @@
       font-weight: 600;
     }
 
-    /* Live KPI Strip & Warning Banners */
-    .kpi-strip {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-top: 12px;
-      padding-top: 10px;
-      border-top: 1px dashed var(--border-color);
+    .select-wrapper {
+      position: relative;
     }
 
-    .kpi-box {
-      background: var(--bg-subtle);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-sm);
-      padding: 8px;
-      text-align: center;
-    }
-
-    .kpi-label {
-      font-size: 0.68rem;
+    .select-wrapper::after {
+      content: "▼";
+      font-size: 0.7rem;
       color: var(--text-muted);
-      text-transform: uppercase;
-      font-weight: 600;
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
     }
 
-    .kpi-val {
-      font-size: 0.98rem;
-      font-weight: 800;
-      color: var(--primary);
-      margin-top: 2px;
-    }
-
-    .warning-banner {
-      background: var(--warning-bg);
-      border: 1px solid var(--warning-border);
-      color: var(--warning-text);
-      border-radius: var(--radius-sm);
-      padding: 8px 12px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      margin-top: 10px;
-      display: none;
-      align-items: center;
+    /* Segmented Y/N Control */
+    .segmented-yn {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 8px;
     }
 
-    .warning-banner.visible {
-      display: flex;
+    .yn-btn {
+      min-height: 46px;
+      border: 1.5px solid var(--border);
+      background: var(--bg-subtle);
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s;
     }
 
-    /* Sub-tabs for Day 1 / Day 2 / Day 3 / Catch-Up */
+    .yn-btn.active-yes {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+    }
+
+    .yn-btn.active-no {
+      background: #475569;
+      border-color: #475569;
+      color: #ffffff;
+    }
+
+    /* ========================================================================
+       SUB-TABS FOR DAY 1 / DAY 2 / DAY 3 / CATCH-UP
+       ======================================================================== */
     .day-pills {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 6px;
       margin-bottom: 12px;
-      background: var(--bg-card);
-      padding: 6px;
+      background: #e2e8f0;
+      padding: 4px;
       border-radius: var(--radius-md);
-      border: 1px solid var(--border-color);
     }
 
     .day-pill {
-      border: 1px solid transparent;
-      background: var(--bg-subtle);
-      color: var(--text-muted);
-      padding: 9px 4px;
+      min-height: 40px;
+      border: none;
       border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-muted);
       font-size: 0.82rem;
       font-weight: 700;
       cursor: pointer;
-      text-align: center;
       position: relative;
+      transition: all 0.15s;
     }
 
     .day-pill.active {
-      background: var(--primary);
-      color: #ffffff;
+      background: #ffffff;
+      color: var(--primary-dark);
+      box-shadow: var(--shadow-sm);
     }
 
     .day-pill .pill-warn {
-      display: none;
-      color: #f59e0b;
+      color: #d97706;
+      font-weight: 900;
       margin-left: 2px;
+      display: none;
     }
 
     .day-pill.has-warn .pill-warn {
@@ -596,110 +553,183 @@
       display: block;
     }
 
-    /* MMP Segmented Control */
-    .segmented-yn {
+    /* ========================================================================
+       LIVE KPI STRIPS, DAY-WISE BREAKDOWN TABLE & VALIDATION ALERTS
+       ======================================================================== */
+    .kpi-strip {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, 1fr);
       gap: 8px;
-    }
-
-    .yn-btn {
-      min-height: 44px;
-      border: 1.5px solid var(--border-color);
       background: var(--bg-subtle);
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 10px 8px;
+      margin-top: 12px;
+      text-align: center;
+    }
+
+    .kpi-box {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .kpi-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
       color: var(--text-muted);
-      border-radius: var(--radius-sm);
-      font-size: 0.92rem;
-      font-weight: 700;
-      cursor: pointer;
+      font-weight: 600;
     }
 
-    .yn-btn.active-yes {
-      background: var(--primary-soft);
-      border-color: var(--primary);
-      color: var(--primary-text);
+    .kpi-val {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+      font-variant-numeric: tabular-nums;
     }
 
-    .yn-btn.active-no {
-      background: var(--bg-card);
-      border-color: var(--text-main);
-      color: var(--text-main);
-    }
-
-    /* ==========================================================================
-       4. STICKY BOTTOM ACTION BAR
-       ========================================================================== */
-    .bottom-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 40;
-      background: var(--bg-card);
-      border-top: 1px solid var(--border-color);
+    /* Catch-Up SMC Formula Info Box */
+    .cu-smc-box {
+      margin-top: 12px;
       padding: 10px 12px;
-      box-shadow: 0 -4px 12px rgba(15, 23, 42, 0.08);
-    }
-
-    .bottom-bar-inner {
-      max-width: 820px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: auto 1fr 1.2fr;
-      gap: 8px;
-    }
-
-    .btn {
-      min-height: 46px;
-      padding: 10px 14px;
-      border-radius: var(--radius-sm);
-      font-size: 0.9rem;
-      font-weight: 700;
-      border: none;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: transform 0.1s ease, opacity 0.15s ease;
-    }
-
-    .btn:active {
-      transform: scale(0.98);
-    }
-
-    .btn-ghost {
-      background: var(--bg-subtle);
-      color: var(--text-muted);
-      border: 1px solid var(--border-color);
-    }
-
-    .btn-secondary {
+      border-radius: var(--radius-md);
       background: var(--primary-soft);
-      color: var(--primary-text);
-      border: 1px solid var(--primary);
+      border: 1px solid #99f6e4;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
-    .btn-primary {
+    .cu-smc-formula {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    .cu-smc-formula strong {
+      color: var(--primary-dark);
+    }
+
+    .cu-smc-badge {
       background: var(--primary);
       color: #ffffff;
+      font-weight: 800;
+      font-size: 0.92rem;
+      padding: 5px 12px;
+      border-radius: var(--radius-sm);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
 
-    .btn-danger {
-      background: var(--danger-soft);
-      color: var(--danger);
-      border: 1px solid var(--danger);
+    /* Live Day-Wise Summary Table */
+    .table-scroll-wrap {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: var(--radius-sm);
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
     }
 
-    .btn-sm {
-      min-height: 36px;
-      padding: 6px 10px;
+    .live-breakdown-table {
+      width: 100%;
+      min-width: 540px;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .live-breakdown-table th {
+      background: #f1f5f9;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.66rem;
+      letter-spacing: 0.03em;
+      padding: 8px 6px;
+      text-align: center;
+      border-bottom: 1px solid #cbd5e1;
+      white-space: nowrap;
+    }
+
+    .live-breakdown-table th:first-child {
+      text-align: left;
+      padding-left: 10px;
+      position: sticky;
+      left: 0;
+      background: #f1f5f9;
+      z-index: 2;
+    }
+
+    .live-breakdown-table td {
+      padding: 8px 6px;
+      text-align: center;
+      border-bottom: 1px solid #f1f5f9;
+      color: var(--text-main);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .live-breakdown-table td:first-child {
+      text-align: left;
+      padding-left: 10px;
+      font-weight: 700;
+      color: var(--primary-dark);
+      position: sticky;
+      left: 0;
+      background: #ffffff;
+      z-index: 1;
+    }
+
+    .live-breakdown-table tr.total-row td {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      font-weight: 800;
+      border-top: 1.5px solid #5eead4;
+      border-bottom: 1px solid #5eead4;
+    }
+
+    .live-breakdown-table tr.total-row td:first-child {
+      background: var(--primary-light);
+    }
+
+    .live-breakdown-table tr.catchup-row td {
+      background: #eff6ff;
+      color: #1e3a8a;
+      font-weight: 800;
+      border-top: 1px solid #bfdbfe;
+      border-bottom: none;
+    }
+
+    .live-breakdown-table tr.catchup-row td:first-child {
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+
+    .warning-banner {
+      margin-top: 10px;
+      padding: 9px 11px;
+      border-radius: var(--radius-sm);
+      background: var(--warning-bg);
+      border: 1px solid var(--warning-border);
+      color: var(--warning);
       font-size: 0.8rem;
+      font-weight: 600;
+      display: none;
+      align-items: flex-start;
+      gap: 8px;
     }
 
-    /* ==========================================================================
-       5. SAVED RECORDS VIEW & AGGREGATE SUMMARY
-       ========================================================================== */
+    .warning-banner.visible {
+      display: flex;
+    }
+
+    /* ========================================================================
+       RECORDS & EXPORT DASHBOARD
+       ======================================================================== */
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -707,7 +737,7 @@
       margin-bottom: 12px;
     }
 
-    @media (min-width: 560px) {
+    @media (min-width: 520px) {
       .summary-grid {
         grid-template-columns: repeat(3, 1fr);
       }
@@ -715,20 +745,26 @@
 
     .stat-card {
       background: var(--bg-card);
-      border: 1px solid var(--border-color);
+      border: 1px solid #e2e8f0;
       border-radius: var(--radius-md);
-      padding: 10px 12px;
+      padding: 11px 12px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 2px;
     }
 
     .stat-title {
-      font-size: 0.72rem;
-      font-weight: 600;
+      font-size: 0.68rem;
+      font-weight: 700;
       color: var(--text-muted);
       text-transform: uppercase;
+      letter-spacing: 0.02em;
     }
 
     .stat-num {
-      font-size: 1.25rem;
+      font-size: 1.18rem;
       font-weight: 800;
       color: var(--text-main);
       margin-top: 2px;
@@ -736,14 +772,15 @@
     }
 
     .stat-sub {
-      font-size: 0.74rem;
+      font-size: 0.7rem;
       color: var(--primary);
       font-weight: 600;
+      line-height: 1.3;
     }
 
     .export-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: 1fr 1fr;
       gap: 8px;
       margin-bottom: 12px;
     }
@@ -753,17 +790,17 @@
     }
 
     .saved-path-banner {
-      background: var(--success-soft);
-      border: 1px solid var(--success);
-      color: var(--text-main);
-      border-radius: var(--radius-sm);
-      padding: 10px 12px;
-      font-size: 0.8rem;
-      margin-top: 10px;
       display: none;
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--success-bg);
+      border: 1px solid #86efac;
+      color: #14532d;
+      font-size: 0.8rem;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 8px;
     }
 
     .saved-path-banner.visible {
@@ -772,13 +809,11 @@
 
     .record-item {
       background: var(--bg-card);
-      border: 1px solid var(--border-color);
+      border: 1px solid #e2e8f0;
       border-radius: var(--radius-md);
       padding: 12px;
       margin-bottom: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      box-shadow: var(--shadow-sm);
     }
 
     .record-top {
@@ -786,12 +821,41 @@
       justify-content: space-between;
       align-items: flex-start;
       gap: 8px;
+      margin-bottom: 6px;
     }
 
     .record-team {
-      font-weight: 800;
       font-size: 0.98rem;
-      color: var(--primary);
+      font-weight: 800;
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .type-badge {
+      font-size: 0.66rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .type-badge.mt {
+      background: #ccfbf1;
+      color: #115e59;
+    }
+
+    .type-badge.ft {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .type-badge.tt {
+      background: #fef3c7;
+      color: #92400e;
     }
 
     .record-meta {
@@ -806,8 +870,9 @@
       background: var(--bg-subtle);
       padding: 8px;
       border-radius: var(--radius-sm);
-      font-size: 0.76rem;
+      font-size: 0.74rem;
       text-align: center;
+      margin: 8px 0;
     }
 
     .record-actions {
@@ -816,67 +881,103 @@
       gap: 8px;
     }
 
-    .type-badge {
-      display: inline-block;
-      font-size: 0.72rem;
-      font-weight: 800;
-      padding: 2px 7px;
-      border-radius: 6px;
-      vertical-align: middle;
-      margin-left: 4px;
+    /* ========================================================================
+       BUTTONS & STICKY BOTTOM ACTION BAR
+       ======================================================================== */
+    .btn {
+      min-height: 44px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      font-weight: 700;
+      font-family: inherit;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: opacity 0.15s, transform 0.1s;
     }
 
-    .type-badge.mt {
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-sm {
+      min-height: 36px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .btn-secondary {
       background: var(--primary-soft);
-      color: var(--primary-text);
+      color: var(--primary-dark);
+      border-color: #99f6e4;
     }
 
-    .type-badge.ft {
-      background: var(--accent-soft);
-      color: var(--accent);
-    }
-
-    .type-badge.tt {
-      background: var(--warning-bg);
-      color: var(--warning-text);
-    }
-
-    .select-wrapper {
-      position: relative;
-    }
-
-    .select-wrapper::after {
-      content: "▼";
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 0.72rem;
+    .btn-ghost {
+      background: #ffffff;
       color: var(--text-muted);
-      pointer-events: none;
+      border-color: var(--border);
     }
 
-    /* ==========================================================================
-       6. CUSTOM TOAST & CONFIRMATION MODAL (NO alert/confirm)
-       ========================================================================== */
+    .btn-danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border-color: #fecaca;
+    }
+
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 98;
+      height: var(--bottom-h);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(8px);
+      border-top: 1px solid var(--border);
+      padding: 10px 12px;
+      box-shadow: 0 -2px 10px rgba(15, 23, 42, 0.06);
+    }
+
+    .bottom-bar-inner {
+      max-width: 720px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: auto 1fr 1.3fr;
+      gap: 8px;
+    }
+
+    /* ========================================================================
+       TOAST & CONFIRMATION MODAL
+       ======================================================================== */
     .toast {
       position: fixed;
-      top: 72px;
+      bottom: calc(var(--bottom-h) + 14px);
       left: 50%;
-      transform: translateX(-50%) translateY(-20px);
+      transform: translateX(-50%) translateY(20px);
       background: #0f172a;
       color: #ffffff;
-      padding: 10px 18px;
+      padding: 10px 16px;
       border-radius: 999px;
-      font-size: 0.86rem;
+      font-size: 0.84rem;
       font-weight: 600;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
-      z-index: 100;
+      box-shadow: var(--shadow-md);
       opacity: 0;
       pointer-events: none;
-      transition: all 0.25s ease;
+      transition: all 0.22s ease;
+      z-index: 200;
+      white-space: nowrap;
       max-width: 92vw;
-      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .toast.show {
@@ -887,12 +988,12 @@
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.6);
-      z-index: 90;
+      background: rgba(15, 23, 42, 0.55);
       display: none;
       align-items: center;
       justify-content: center;
       padding: 16px;
+      z-index: 300;
     }
 
     .modal-backdrop.open {
@@ -900,13 +1001,12 @@
     }
 
     .modal-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
+      background: #ffffff;
       border-radius: var(--radius-lg);
-      max-width: 420px;
+      max-width: 400px;
       width: 100%;
       padding: 18px;
-      box-shadow: 0 20px 35px rgba(0,0,0,0.3);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
     }
 
     .modal-title {
@@ -1242,6 +1342,22 @@
             </div>
           </div>
 
+          <!-- Live MMP KPI Analysis Strip -->
+          <div class="kpi-strip">
+            <div class="kpi-box">
+              <div class="kpi-label">Total MMP Target</div>
+              <div class="kpi-val" id="kpi_mmp_target">0</div>
+            </div>
+            <div class="kpi-box">
+              <div class="kpi-label">Total MMP Cov</div>
+              <div class="kpi-val" id="kpi_mmp_cov">0</div>
+            </div>
+            <div class="kpi-box">
+              <div class="kpi-label">MMP Coverage / Diff</div>
+              <div class="kpi-val" id="kpi_mmp_diff">0% (0)</div>
+            </div>
+          </div>
+
           <div style="margin-top: 14px; display: flex; justify-content: space-between;">
             <button type="button" class="btn btn-ghost" onclick="switchMainTab('admin')">&larr; Admin</button>
             <button type="button" class="btn btn-secondary" onclick="switchMainTab('coverage')">Next: Coverage &rarr;</button>
@@ -1409,7 +1525,7 @@
         <div class="day-card-pane" id="pane-cu">
           <div class="card">
             <div class="card-header">
-              <h2 class="card-title">Catch-Up Day 1</h2>
+              <h2 class="card-title">Catch-Up Day 1 (Final Campaign Day)</h2>
               <span class="col-badge">Cols 45–46</span>
             </div>
             <div class="grid-2-compact">
@@ -1422,6 +1538,16 @@
                 <input type="number" min="0" inputmode="numeric" id="f_Target_CU_D1" class="field-input num-input calc-trigger" placeholder="0" />
               </div>
             </div>
+
+            <!-- Live Catch-Up Day SMC Breakdown -->
+            <div class="cu-smc-box">
+              <div class="cu-smc-formula">
+                <strong>Catch-Up Day SMC Formula:</strong><br />
+                <span id="cu_smc_formula_text">0 Total NA (D1–3) &minus; 0 Same-Day NA Cov &minus; 0 Catch-Up Cov</span>
+              </div>
+              <div class="cu-smc-badge" id="cu_smc_badge_val">SMC: 0</div>
+            </div>
+
             <div class="warning-banner" id="warn_cu">
               <span>&#9888;</span>
               <span id="warn_cu_text">Covered Catch-UP Day 1 exceeds Target Catch-UP Day 1.</span>
@@ -1432,25 +1558,80 @@
           </div>
         </div>
 
-        <!-- Live Real-Time 3-Day Summary Card -->
+        <!-- Live Real-Time Day-Wise, Total & Catch-Up Summary Card -->
         <div class="card" style="background: var(--bg-subtle);">
           <div class="card-header" style="margin-bottom: 8px; padding-bottom: 6px;">
-            <h3 class="card-title" style="font-size: 0.88rem;">Live Team Totals (Day 1–3)</h3>
+            <h3 class="card-title" style="font-size: 0.88rem;">Live Team Summary (Day-Wise &amp; Catch-Up)</h3>
             <span class="col-badge" id="live_cov_pct">0% Cov</span>
           </div>
-          <div class="grid-3-compact">
-            <div class="kpi-box">
-              <div class="kpi-label">Target D1–3</div>
-              <div class="kpi-val" id="live_tot_target">0</div>
-            </div>
-            <div class="kpi-box">
-              <div class="kpi-label">Covered D1–3</div>
-              <div class="kpi-val" id="live_tot_cov">0</div>
-            </div>
-            <div class="kpi-box">
-              <div class="kpi-label">Total NA / ZD</div>
-              <div class="kpi-val" id="live_tot_nazd">0 / 0</div>
-            </div>
+
+          <div class="table-scroll-wrap">
+            <table class="live-breakdown-table">
+              <thead>
+                <tr>
+                  <th>Period</th>
+                  <th>Target</th>
+                  <th>Covered (%)</th>
+                  <th>NA</th>
+                  <th>Same Day NA Cov</th>
+                  <th>SMC (Remaining)</th>
+                  <th>Schools Cov</th>
+                  <th>Zero Dose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Day 1</td>
+                  <td id="live_d1_target">0</td>
+                  <td id="live_d1_cov">0 (0%)</td>
+                  <td id="live_d1_na">0</td>
+                  <td id="live_d1_sdna">0</td>
+                  <td id="live_d1_smc">0</td>
+                  <td id="live_d1_sch">0</td>
+                  <td id="live_d1_zd">0</td>
+                </tr>
+                <tr>
+                  <td>Day 2</td>
+                  <td id="live_d2_target">0</td>
+                  <td id="live_d2_cov">0 (0%)</td>
+                  <td id="live_d2_na">0</td>
+                  <td id="live_d2_sdna">0</td>
+                  <td id="live_d2_smc">0</td>
+                  <td id="live_d2_sch">0</td>
+                  <td id="live_d2_zd">0</td>
+                </tr>
+                <tr>
+                  <td>Day 3</td>
+                  <td id="live_d3_target">0</td>
+                  <td id="live_d3_cov">0 (0%)</td>
+                  <td id="live_d3_na">0</td>
+                  <td id="live_d3_sdna">0</td>
+                  <td id="live_d3_smc">0</td>
+                  <td id="live_d3_sch">0</td>
+                  <td id="live_d3_zd">0</td>
+                </tr>
+                <tr class="total-row">
+                  <td>Total (D1–3)</td>
+                  <td id="live_tot_target">0</td>
+                  <td id="live_tot_cov">0 (0%)</td>
+                  <td id="live_tot_na">0</td>
+                  <td id="live_tot_sdna">0</td>
+                  <td id="live_tot_smc">0</td>
+                  <td id="live_tot_sch">0</td>
+                  <td id="live_tot_zd">0</td>
+                </tr>
+                <tr class="catchup-row">
+                  <td>Catch-Up Day</td>
+                  <td id="live_cu_target">0</td>
+                  <td id="live_cu_cov">0 (0%)</td>
+                  <td>&mdash;</td>
+                  <td>&mdash;</td>
+                  <td id="live_cu_smc">0</td>
+                  <td>&mdash;</td>
+                  <td>&mdash;</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -1461,37 +1642,83 @@
            ==================================================================== -->
       <section class="section-panel" id="panel-records">
         
-        <!-- Campaign Aggregate Totals -->
+        <!-- Campaign Aggregate Totals in Exact Requested Analytical Sequence -->
         <div class="summary-grid">
+          <!-- 1. Teams Entered -->
           <div class="stat-card">
             <div class="stat-title">Teams Entered</div>
             <div class="stat-num" id="agg_teams">0</div>
             <div class="stat-sub" id="agg_team_breakdown">0 MT • 0 FT • 0 TT</div>
           </div>
+
+          <!-- 2. HH Target / Rec -->
           <div class="stat-card">
             <div class="stat-title">HH Target / Rec</div>
             <div class="stat-num" id="agg_hh">0 / 0</div>
-            <div class="stat-sub" id="agg_hh_pct">0% HH Rec (MT)</div>
+            <div class="stat-sub" id="agg_hh_pct">0% Rec • +0 vs Target</div>
           </div>
+
+          <!-- 3. Children Cov / Target -->
           <div class="stat-card">
-            <div class="stat-title">Target D1–3 (MT)</div>
-            <div class="stat-num" id="agg_target">0</div>
-            <div class="stat-sub">Children Target</div>
+            <div class="stat-title">Children Cov / Target</div>
+            <div class="stat-num" id="agg_target">0 / 0</div>
+            <div class="stat-sub" id="agg_target_pct">0% Cov • 0 Uncovered</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-title">Covered (All Teams)</div>
-            <div class="stat-num" id="agg_covered">0</div>
-            <div class="stat-sub" id="agg_cov_pct">0% MT Cov</div>
-          </div>
+
+          <!-- 4. Total NA (D1–3) -->
           <div class="stat-card">
             <div class="stat-title">Total NA (D1–3)</div>
             <div class="stat-num" id="agg_na">0</div>
-            <div class="stat-sub" id="agg_na_cov">0 NA Covered</div>
+            <div class="stat-sub" id="agg_na_cov">0% of Target • 0 NA Cov</div>
           </div>
+
+          <!-- 5. Same Day NA Coverage -->
+          <div class="stat-card">
+            <div class="stat-title">Same Day NA Coverage</div>
+            <div class="stat-num" id="agg_same_day_na">0</div>
+            <div class="stat-sub" id="agg_same_day_na_pct">0% Same-Day NA Rec</div>
+          </div>
+
+          <!-- 6. SMC (Remaining) -->
+          <div class="stat-card">
+            <div class="stat-title">SMC (Remaining)</div>
+            <div class="stat-num" id="agg_smc">0</div>
+            <div class="stat-sub" id="agg_smc_sub">0% Resolved • 0 Backlog</div>
+          </div>
+
+          <!-- 7. MMP Target / Cov -->
+          <div class="stat-card">
+            <div class="stat-title">MMP Target / Cov</div>
+            <div class="stat-num" id="agg_mmp">0 / 0</div>
+            <div class="stat-sub" id="agg_mmp_pct">0% Cov • 0 Gap</div>
+          </div>
+
+          <!-- 8. School Coverage (D1–3) -->
+          <div class="stat-card">
+            <div class="stat-title">School Coverage (D1–3)</div>
+            <div class="stat-num" id="agg_schools">0</div>
+            <div class="stat-sub" id="agg_schools_sub">0.0 Avg / MT Team</div>
+          </div>
+
+          <!-- 9. Zero Dose (D1–3) -->
           <div class="stat-card">
             <div class="stat-title">Zero Dose (D1–3)</div>
             <div class="stat-num" id="agg_zd">0</div>
-            <div class="stat-sub" id="agg_schools">0 Schools</div>
+            <div class="stat-sub" id="agg_zd_sub">0.0% of MT Covered</div>
+          </div>
+
+          <!-- 10. Covered (All Teams) -->
+          <div class="stat-card">
+            <div class="stat-title">Covered (All Teams)</div>
+            <div class="stat-num" id="agg_covered">0</div>
+            <div class="stat-sub" id="agg_cov_pct">MT: 0 (0%) • FT: 0 • TT: 0</div>
+          </div>
+
+          <!-- 11. Catch-Up Cov / Tar (MT) -->
+          <div class="stat-card">
+            <div class="stat-title">Catch-Up Cov / Tar (MT)</div>
+            <div class="stat-num" id="agg_catchup">0 / 0</div>
+            <div class="stat-sub" id="agg_catchup_pct">0% Catch-Up Attainment</div>
           </div>
         </div>
 
@@ -1914,11 +2141,31 @@
       document.getElementById("kpi_hh_rec").textContent = totHHRec.toLocaleString();
       document.getElementById("kpi_hh_diff").textContent = `${hhPct}% (${hhDiff >= 0 ? "+" : ""}${hhDiff})`;
 
-      // 2. MMP Validations intentionally excluded per user request
+      // 2. MMP Live KPI Analysis
+      const mmpT1 = getNum("f_MMP_D1");
+      const mmpT2 = getNum("f_MMP_D2");
+      const mmpT3 = getNum("f_MMP_D3");
+      const mmpC1 = getNum("f_MMP_Cov_D1");
+      const mmpC2 = getNum("f_MMP_Cov_D2");
+      const mmpC3 = getNum("f_MMP_Cov_D3");
+
+      const totMMPTarget = mmpT1 + mmpT2 + mmpT3;
+      const totMMPCov = mmpC1 + mmpC2 + mmpC3;
+      const mmpDiff = totMMPCov - totMMPTarget;
+      const mmpPct = totMMPTarget > 0 ? Math.round((totMMPCov / totMMPTarget) * 100) : 0;
+
+      document.getElementById("kpi_mmp_target").textContent = totMMPTarget.toLocaleString();
+      document.getElementById("kpi_mmp_cov").textContent = totMMPCov.toLocaleString();
+      document.getElementById("kpi_mmp_diff").textContent = `${mmpPct}% (${mmpDiff >= 0 ? "+" : ""}${mmpDiff})`;
       document.getElementById("tab-btn-hh").classList.remove("has-warning");
 
-      // 3. Day 1, Day 2, Day 3 Validations
+      // 3. Day 1, Day 2, Day 3 Validations & Live Day-Wise Summary
+      // Day-wise SMC = NA Day - (Same Day NA Cov + Cov in Catch UP-NA)
       let anyCovWarn = false;
+      let totSmc = 0;
+      let totSdNa = 0;
+      let totSch = 0;
+
       [1, 2, 3].forEach(d => {
         const t = getNum(`f_Target_D${d}`);
         const c = getNum(`f_Covered_D${d}`);
@@ -1927,6 +2174,11 @@
         const cuNa = getNum(`f_CatchUp_NA_D${d}`);
         const sch = getNum(`f_Schools_D${d}`);
         const zd = getNum(`f_ZeroDose_D${d}`);
+
+        const smc = Math.max(0, na - (sdNa + cuNa));
+        totSmc += smc;
+        totSdNa += sdNa;
+        totSch += sch;
 
         const anyEntered = hasVal(`f_Target_D${d}`) || hasVal(`f_Covered_D${d}`) || hasVal(`f_NA_D${d}`);
 
@@ -1994,9 +2246,20 @@
           warnBanner.classList.remove("visible");
           pillEl.classList.remove("has-warn");
         }
+
+        // Update Live Day-Wise Row
+        const dayPct = t > 0 ? Math.round((c / t) * 100) : 0;
+        document.getElementById(`live_d${d}_target`).textContent = t.toLocaleString();
+        document.getElementById(`live_d${d}_cov`).textContent = `${c.toLocaleString()} (${dayPct}%)`;
+        document.getElementById(`live_d${d}_na`).textContent = na.toLocaleString();
+        document.getElementById(`live_d${d}_sdna`).textContent = sdNa.toLocaleString();
+        document.getElementById(`live_d${d}_smc`).textContent = smc.toLocaleString();
+        document.getElementById(`live_d${d}_sch`).textContent = sch.toLocaleString();
+        document.getElementById(`live_d${d}_zd`).textContent = zd.toLocaleString();
       });
 
-      // 4. Catch-Up Day 1 Validation
+      // 4. Catch-Up Day 1 Validation & Catch-Up SMC Adjustment
+      // Catch-Up Day SMC = Total NA (D1-3) - Total Same-Day NA Cov (D1-3) - Covered Catch-UP Day 1
       const cuCov = getNum("f_Covered_CU_D1");
       const cuTar = getNum("f_Target_CU_D1");
       const warnCu = document.getElementById("warn_cu");
@@ -2016,17 +2279,32 @@
 
       document.getElementById("tab-btn-coverage").classList.toggle("has-warning", anyCovWarn);
 
-      // 5. Live 3-Day Summary KPIs
+      // 5. Live 3-Day Total Summary Row + Catch-Up Day Row
       const totTarget = getNum("f_Target_D1") + getNum("f_Target_D2") + getNum("f_Target_D3");
       const totCov = getNum("f_Covered_D1") + getNum("f_Covered_D2") + getNum("f_Covered_D3");
       const totNA = getNum("f_NA_D1") + getNum("f_NA_D2") + getNum("f_NA_D3");
       const totZD = getNum("f_ZeroDose_D1") + getNum("f_ZeroDose_D2") + getNum("f_ZeroDose_D3");
       const covPct = totTarget > 0 ? Math.round((totCov / totTarget) * 100) : 0;
 
+      const cuPct = cuTar > 0 ? Math.round((cuCov / cuTar) * 100) : 0;
+      const catchUpSmc = Math.max(0, totNA - totSdNa - cuCov);
+
+      document.getElementById("cu_smc_formula_text").textContent =
+        `${totNA.toLocaleString()} Total NA (D1–3) − ${totSdNa.toLocaleString()} Same-Day NA Cov − ${cuCov.toLocaleString()} Catch-Up Cov`;
+      document.getElementById("cu_smc_badge_val").textContent = `SMC: ${catchUpSmc.toLocaleString()}`;
+
       document.getElementById("live_tot_target").textContent = totTarget.toLocaleString();
-      document.getElementById("live_tot_cov").textContent = totCov.toLocaleString();
-      document.getElementById("live_tot_nazd").textContent = `${totNA} / ${totZD}`;
+      document.getElementById("live_tot_cov").textContent = `${totCov.toLocaleString()} (${covPct}%)`;
+      document.getElementById("live_tot_na").textContent = totNA.toLocaleString();
+      document.getElementById("live_tot_sdna").textContent = totSdNa.toLocaleString();
+      document.getElementById("live_tot_smc").textContent = totSmc.toLocaleString();
+      document.getElementById("live_tot_sch").textContent = totSch.toLocaleString();
+      document.getElementById("live_tot_zd").textContent = totZD.toLocaleString();
       document.getElementById("live_cov_pct").textContent = `${covPct}% Cov`;
+
+      document.getElementById("live_cu_target").textContent = cuTar.toLocaleString();
+      document.getElementById("live_cu_cov").textContent = `${cuCov.toLocaleString()} (${cuPct}%)`;
+      document.getElementById("live_cu_smc").textContent = catchUpSmc.toLocaleString();
     }
 
     /* ========================================================================
@@ -2300,9 +2578,13 @@
       document.getElementById("headerRecordCount").textContent = count;
       document.getElementById("tabRecordCount").textContent = count;
 
-      // Aggregate totals across all saved teams (MT + FT + TT)
+      // Aggregate totals across all saved teams (MT, FT, and TT separated)
       let countMT = 0, countFT = 0, countTT = 0;
-      let sumHHT = 0, sumHHR = 0, sumTar = 0, sumCovMT = 0, sumCovFTTT = 0, sumNA = 0, sumNACov = 0, sumZD = 0, sumSch = 0;
+      let sumHHT = 0, sumHHR = 0;
+      let sumMMPT = 0, sumMMPC = 0;
+      let sumTar = 0, sumCovMT = 0, sumCovFT = 0, sumCovTT = 0;
+      let sumCUCovMT = 0, sumCUTarMT = 0, sumCUCovFT = 0, sumCUCovTT = 0;
+      let sumNA = 0, sumSdNACov = 0, sumCUNACov = 0, sumNACov = 0, sumZD = 0, sumSch = 0;
 
       savedRecords.forEach(r => {
         const tType = r["Team Type"] || "MT";
@@ -2319,6 +2601,14 @@
                     (Number(r["HH Recorded (Tally Sheet)-Day 2"]) || 0) +
                     (Number(r["HH Recorded (Tally Sheet)-Day 3"]) || 0);
 
+          sumMMPT += (Number(r["MMP Day 1"]) || 0) +
+                     (Number(r["MMP Day 2"]) || 0) +
+                     (Number(r["MMP Day 3"]) || 0);
+
+          sumMMPC += (Number(r["MMP Covered Day 1"]) || 0) +
+                     (Number(r["MMP Covered Day 2"]) || 0) +
+                     (Number(r["MMP Covered Day 3"]) || 0);
+
           sumTar += (Number(r["Target Day 1"]) || 0) +
                     (Number(r["Target Day 2"]) || 0) +
                     (Number(r["Target Day 3"]) || 0);
@@ -2327,16 +2617,22 @@
                       (Number(r["Covered Day 2"]) || 0) +
                       (Number(r["Covered Day 3"]) || 0);
 
+          sumCUCovMT += (Number(r["Covered Catch-UP Day 1"]) || 0);
+          sumCUTarMT += (Number(r["Target Catch-UP Day 1"]) || 0);
+
           sumNA += (Number(r["NA Day 1"]) || 0) +
                    (Number(r["NA Day 2"]) || 0) +
                    (Number(r["NA Day 3"]) || 0);
 
-          sumNACov += (Number(r["Same Day NA Coverage Day 1"]) || 0) +
-                      (Number(r["Covered in Catch UP-NA Day 1"]) || 0) +
-                      (Number(r["Same Day NA Coverage Day 2"]) || 0) +
-                      (Number(r["Covered in Catch UP-NA Day 2"]) || 0) +
-                      (Number(r["Same Day NA Coverage Day 3"]) || 0) +
-                      (Number(r["Covered in Catch UP-NA Day 3"]) || 0);
+          const sdNaSum = (Number(r["Same Day NA Coverage Day 1"]) || 0) +
+                          (Number(r["Same Day NA Coverage Day 2"]) || 0) +
+                          (Number(r["Same Day NA Coverage Day 3"]) || 0);
+          const cuNaSum = (Number(r["Covered in Catch UP-NA Day 1"]) || 0) +
+                          (Number(r["Covered in Catch UP-NA Day 2"]) || 0) +
+                          (Number(r["Covered in Catch UP-NA Day 3"]) || 0);
+          sumSdNACov += sdNaSum;
+          sumCUNACov += cuNaSum;
+          sumNACov += sdNaSum + cuNaSum;
 
           sumZD += (Number(r["Zero Dose Children recorded on TS Day 1"]) || 0) +
                    (Number(r["Zero Dose Children recorded on TS Day 2"]) || 0) +
@@ -2345,31 +2641,85 @@
           sumSch += (Number(r["Schools Coverage Day 1"]) || 0) +
                     (Number(r["Schools Coverage Day 2"]) || 0) +
                     (Number(r["Schools Coverage Day 3"]) || 0);
-        } else {
-          sumCovFTTT += (Number(r["Covered Day 1"]) || 0) +
-                        (Number(r["Covered Day 2"]) || 0) +
-                        (Number(r["Covered Day 3"]) || 0) +
-                        (Number(r["Covered Catch-UP Day 1"]) || 0);
+        } else if (tType === "FT") {
+          sumCovFT += (Number(r["Covered Day 1"]) || 0) +
+                      (Number(r["Covered Day 2"]) || 0) +
+                      (Number(r["Covered Day 3"]) || 0);
+          sumCUCovFT += (Number(r["Covered Catch-UP Day 1"]) || 0);
+        } else if (tType === "TT") {
+          sumCovTT += (Number(r["Covered Day 1"]) || 0) +
+                      (Number(r["Covered Day 2"]) || 0) +
+                      (Number(r["Covered Day 3"]) || 0);
+          sumCUCovTT += (Number(r["Covered Catch-UP Day 1"]) || 0);
         }
       });
 
+      // Analytical metrics & ratios
       const hhPct = sumHHT > 0 ? Math.round((sumHHR / sumHHT) * 100) : 0;
-      const mtCovPct = sumTar > 0 ? Math.round((sumCovMT / sumTar) * 100) : 0;
-      const totalAllCov = sumCovMT + sumCovFTTT;
+      const hhDelta = sumHHR - sumHHT;
+      const hhDeltaSign = hhDelta >= 0 ? "+" : "";
 
+      const mtCovPct = sumTar > 0 ? Math.round((sumCovMT / sumTar) * 100) : 0;
+      const childrenUncovered = Math.max(0, sumTar - sumCovMT);
+
+      const naTargetPct = sumTar > 0 ? ((sumNA / sumTar) * 100).toFixed(1) : "0.0";
+      const sameDayNaRate = sumNA > 0 ? Math.round((sumSdNACov / sumNA) * 100) : 0;
+
+      const smcRemaining = Math.max(0, sumNA - sumSdNACov - sumCUCovMT);
+      const smcResolvedPct = sumNA > 0 ? Math.round(((sumNA - smcRemaining) / sumNA) * 100) : 0;
+
+      const mmpPct = sumMMPT > 0 ? Math.round((sumMMPC / sumMMPT) * 100) : 0;
+      const mmpGap = Math.max(0, sumMMPT - sumMMPC);
+
+      const avgSchoolsPerMT = countMT > 0 ? (sumSch / countMT).toFixed(1) : "0.0";
+      const zdRateOfCov = sumCovMT > 0 ? ((sumZD / sumCovMT) * 100).toFixed(1) : "0.0";
+
+      const totalAllCov = sumCovMT + sumCUCovMT + sumCovFT + sumCUCovFT + sumCovTT + sumCUCovTT;
+      const cuPct = sumCUTarMT > 0 ? Math.round((sumCUCovMT / sumCUTarMT) * 100) : 0;
+
+      // 1. Teams Entered
       document.getElementById("agg_teams").textContent = count;
       document.getElementById("agg_team_breakdown").textContent = `${countMT} MT • ${countFT} FT • ${countTT} TT`;
+
+      // 2. HH Target / Rec
       document.getElementById("agg_hh").textContent = `${sumHHT.toLocaleString()} / ${sumHHR.toLocaleString()}`;
-      document.getElementById("agg_hh_pct").textContent = `${hhPct}% HH Rec (MT)`;
-      document.getElementById("agg_target").textContent = sumTar.toLocaleString();
-      document.getElementById("agg_covered").textContent = totalAllCov.toLocaleString();
-      document.getElementById("agg_cov_pct").textContent = countFT + countTT > 0
-        ? `MT: ${sumCovMT} (${mtCovPct}%) | FT/TT: ${sumCovFTTT}`
-        : `${mtCovPct}% Coverage`;
+      document.getElementById("agg_hh_pct").textContent = `${hhPct}% Rec • ${hhDeltaSign}${hhDelta.toLocaleString()} vs Target`;
+
+      // 3. Children Cov / Target
+      document.getElementById("agg_target").textContent = `${sumCovMT.toLocaleString()} / ${sumTar.toLocaleString()}`;
+      document.getElementById("agg_target_pct").textContent = `${mtCovPct}% Cov • ${childrenUncovered.toLocaleString()} Uncovered`;
+
+      // 4. Total NA (D1–3)
       document.getElementById("agg_na").textContent = sumNA.toLocaleString();
-      document.getElementById("agg_na_cov").textContent = `${sumNACov.toLocaleString()} NA Covered`;
+      document.getElementById("agg_na_cov").textContent = `${naTargetPct}% of Target • ${sumNACov.toLocaleString()} NA Cov`;
+
+      // 5. Same Day NA Coverage
+      document.getElementById("agg_same_day_na").textContent = sumSdNACov.toLocaleString();
+      document.getElementById("agg_same_day_na_pct").textContent = `${sameDayNaRate}% Same-Day NA Rec`;
+
+      // 6. SMC (Remaining)
+      document.getElementById("agg_smc").textContent = smcRemaining.toLocaleString();
+      document.getElementById("agg_smc_sub").textContent = `${smcResolvedPct}% Resolved • ${smcRemaining.toLocaleString()} Backlog`;
+
+      // 7. MMP Target / Cov
+      document.getElementById("agg_mmp").textContent = `${sumMMPT.toLocaleString()} / ${sumMMPC.toLocaleString()}`;
+      document.getElementById("agg_mmp_pct").textContent = `${mmpPct}% Cov • ${mmpGap.toLocaleString()} Gap`;
+
+      // 8. School Coverage (D1–3)
+      document.getElementById("agg_schools").textContent = sumSch.toLocaleString();
+      document.getElementById("agg_schools_sub").textContent = `${avgSchoolsPerMT} Avg / MT Team`;
+
+      // 9. Zero Dose (D1–3)
       document.getElementById("agg_zd").textContent = sumZD.toLocaleString();
-      document.getElementById("agg_schools").textContent = `${sumSch.toLocaleString()} Schools`;
+      document.getElementById("agg_zd_sub").textContent = `${zdRateOfCov}% of MT Covered`;
+
+      // 10. Covered (All Teams)
+      document.getElementById("agg_covered").textContent = totalAllCov.toLocaleString();
+      document.getElementById("agg_cov_pct").textContent = `MT: ${sumCovMT} (${mtCovPct}%) • FT: ${sumCovFT + sumCUCovFT} • TT: ${sumCovTT + sumCUCovTT}`;
+
+      // 11. Catch-Up Cov / Tar (MT)
+      document.getElementById("agg_catchup").textContent = `${sumCUCovMT.toLocaleString()} / ${sumCUTarMT.toLocaleString()}`;
+      document.getElementById("agg_catchup_pct").textContent = `${cuPct}% Catch-Up Attainment`;
 
       renderRecordsList();
     }
@@ -2616,7 +2966,7 @@
 
     /**
      * Zero-Dependency Pure-JS A4 Landscape PDF Generator (842 x 595 pt)
-     * Builds a valid multi-page PDF 1.4 document with vector tables, all 46 columns
+     * Builds a valid multi-page PDF 1.4 document with vector tables, all 47 columns
      * grouped cleanly across two horizontal tables per page, and campaign summary totals.
      */
     async function exportPDF() {
