@@ -1642,7 +1642,7 @@
            ==================================================================== -->
       <section class="section-panel" id="panel-records">
         
-        <!-- Campaign Aggregate Totals in Exact Requested Analytical Sequence -->
+        <!-- Campaign Aggregate Totals (Catch-Up Cov / Tar (MT) at 6th position) -->
         <div class="summary-grid">
           <!-- 1. Teams Entered -->
           <div class="stat-card">
@@ -1679,46 +1679,46 @@
             <div class="stat-sub" id="agg_same_day_na_pct">0% Same-Day NA Rec</div>
           </div>
 
-          <!-- 6. SMC (Remaining) -->
+          <!-- 6. Catch-Up Cov / Tar (MT) -->
+          <div class="stat-card">
+            <div class="stat-title">Catch-Up Cov / Tar (MT)</div>
+            <div class="stat-num" id="agg_catchup">0 / 0</div>
+            <div class="stat-sub" id="agg_catchup_pct">0% Catch-Up Attainment</div>
+          </div>
+
+          <!-- 7. SMC (Remaining) -->
           <div class="stat-card">
             <div class="stat-title">SMC (Remaining)</div>
             <div class="stat-num" id="agg_smc">0</div>
             <div class="stat-sub" id="agg_smc_sub">0% Resolved • 0 Backlog</div>
           </div>
 
-          <!-- 7. MMP Target / Cov -->
+          <!-- 8. MMP Target / Cov -->
           <div class="stat-card">
             <div class="stat-title">MMP Target / Cov</div>
             <div class="stat-num" id="agg_mmp">0 / 0</div>
             <div class="stat-sub" id="agg_mmp_pct">0% Cov • 0 Gap</div>
           </div>
 
-          <!-- 8. School Coverage (D1–3) -->
+          <!-- 9. School Coverage (D1–3) -->
           <div class="stat-card">
             <div class="stat-title">School Coverage (D1–3)</div>
             <div class="stat-num" id="agg_schools">0</div>
             <div class="stat-sub" id="agg_schools_sub">0.0 Avg / MT Team</div>
           </div>
 
-          <!-- 9. Zero Dose (D1–3) -->
+          <!-- 10. Zero Dose (D1–3) -->
           <div class="stat-card">
             <div class="stat-title">Zero Dose (D1–3)</div>
             <div class="stat-num" id="agg_zd">0</div>
             <div class="stat-sub" id="agg_zd_sub">0.0% of MT Covered</div>
           </div>
 
-          <!-- 10. Covered (All Teams) -->
+          <!-- 11. Covered (All Teams) -->
           <div class="stat-card">
             <div class="stat-title">Covered (All Teams)</div>
             <div class="stat-num" id="agg_covered">0</div>
             <div class="stat-sub" id="agg_cov_pct">MT: 0 (0%) • FT: 0 • TT: 0</div>
-          </div>
-
-          <!-- 11. Catch-Up Cov / Tar (MT) -->
-          <div class="stat-card">
-            <div class="stat-title">Catch-Up Cov / Tar (MT)</div>
-            <div class="stat-num" id="agg_catchup">0 / 0</div>
-            <div class="stat-sub" id="agg_catchup_pct">0% Catch-Up Attainment</div>
           </div>
         </div>
 
@@ -2216,13 +2216,8 @@
           cuEl.classList.remove("input-warning");
         }
 
-        // Check 4: Schools Coverage cannot exceed Covered Day
-        if (sch > c && (c > 0 || sch > 0)) {
-          msgs.push(`Schools (${sch}) > Covered (${c})`);
-          schEl.classList.add("input-warning");
-        } else {
-          schEl.classList.remove("input-warning");
-        }
+        // Clear any prior warning on Schools Coverage (no validation on Day 1, Day 2, or Day 3)
+        schEl.classList.remove("input-warning");
 
         // Check 5: Zero Dose cannot exceed Covered Day
         if (zd > c && (c > 0 || zd > 0)) {
@@ -2674,7 +2669,11 @@
       const avgSchoolsPerMT = countMT > 0 ? (sumSch / countMT).toFixed(1) : "0.0";
       const zdRateOfCov = sumCovMT > 0 ? ((sumZD / sumCovMT) * 100).toFixed(1) : "0.0";
 
-      const totalAllCov = sumCovMT + sumCUCovMT + sumCovFT + sumCUCovFT + sumCovTT + sumCUCovTT;
+      const totalMTAllCov = sumCovMT + sumCUCovMT;
+      const totalFTAllCov = sumCovFT + sumCUCovFT;
+      const totalTTAllCov = sumCovTT + sumCUCovTT;
+      const totalAllCov = totalMTAllCov + totalFTAllCov + totalTTAllCov;
+      const mtSharePct = totalAllCov > 0 ? Math.round((totalMTAllCov / totalAllCov) * 100) : 0;
       const cuPct = sumCUTarMT > 0 ? Math.round((sumCUCovMT / sumCUTarMT) * 100) : 0;
 
       // 1. Teams Entered
@@ -2697,29 +2696,29 @@
       document.getElementById("agg_same_day_na").textContent = sumSdNACov.toLocaleString();
       document.getElementById("agg_same_day_na_pct").textContent = `${sameDayNaRate}% Same-Day NA Rec`;
 
-      // 6. SMC (Remaining)
+      // 6. Catch-Up Cov / Tar (MT)
+      document.getElementById("agg_catchup").textContent = `${sumCUCovMT.toLocaleString()} / ${sumCUTarMT.toLocaleString()}`;
+      document.getElementById("agg_catchup_pct").textContent = `${cuPct}% Catch-Up Attainment`;
+
+      // 7. SMC (Remaining)
       document.getElementById("agg_smc").textContent = smcRemaining.toLocaleString();
       document.getElementById("agg_smc_sub").textContent = `${smcResolvedPct}% Resolved • ${smcRemaining.toLocaleString()} Backlog`;
 
-      // 7. MMP Target / Cov
+      // 8. MMP Target / Cov
       document.getElementById("agg_mmp").textContent = `${sumMMPT.toLocaleString()} / ${sumMMPC.toLocaleString()}`;
       document.getElementById("agg_mmp_pct").textContent = `${mmpPct}% Cov • ${mmpGap.toLocaleString()} Gap`;
 
-      // 8. School Coverage (D1–3)
+      // 9. School Coverage (D1–3)
       document.getElementById("agg_schools").textContent = sumSch.toLocaleString();
       document.getElementById("agg_schools_sub").textContent = `${avgSchoolsPerMT} Avg / MT Team`;
 
-      // 9. Zero Dose (D1–3)
+      // 10. Zero Dose (D1–3)
       document.getElementById("agg_zd").textContent = sumZD.toLocaleString();
       document.getElementById("agg_zd_sub").textContent = `${zdRateOfCov}% of MT Covered`;
 
-      // 10. Covered (All Teams)
+      // 11. Covered (All Teams)
       document.getElementById("agg_covered").textContent = totalAllCov.toLocaleString();
-      document.getElementById("agg_cov_pct").textContent = `MT: ${sumCovMT} (${mtCovPct}%) • FT: ${sumCovFT + sumCUCovFT} • TT: ${sumCovTT + sumCUCovTT}`;
-
-      // 11. Catch-Up Cov / Tar (MT)
-      document.getElementById("agg_catchup").textContent = `${sumCUCovMT.toLocaleString()} / ${sumCUTarMT.toLocaleString()}`;
-      document.getElementById("agg_catchup_pct").textContent = `${cuPct}% Catch-Up Attainment`;
+      document.getElementById("agg_cov_pct").textContent = `MT: ${totalMTAllCov.toLocaleString()} (${mtSharePct}%) • FT: ${totalFTAllCov.toLocaleString()} • TT: ${totalTTAllCov.toLocaleString()}`;
 
       renderRecordsList();
     }
