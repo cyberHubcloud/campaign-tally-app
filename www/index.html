@@ -1300,6 +1300,13 @@
         <span class="home-btn-title">6. Microplan</span>
         <span class="home-btn-desc">Download one Excel file: UCMO Summary, Mobile Team, Fixed_Transit Team, Operational sheet, Hamlets Data Sheet, AIC Summary &amp; Hamlets Data</span>
       </button>
+      <div class="saved-path-banner" id="savedPathBannerHome">
+        <div style="min-width: 0; word-break: break-word;">
+          <strong style="color: var(--success);">&#10003; Saved to Phone Memory:</strong><br />
+          <span id="savedPathTextHome" style="font-family: monospace; font-size: 0.76rem;"></span>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" id="btnShareSavedFileHome" style="flex-shrink: 0;">Share</button>
+      </div>
       <div class="credits credits--card">
         <div class="credit-item">
           <div class="credit-head">
@@ -2575,13 +2582,8 @@
         // Clear any prior warning on Schools Coverage (no validation on Day 1, Day 2, or Day 3)
         schEl.classList.remove("input-warning");
 
-        // Check 5: Zero Dose cannot exceed Covered Day
-        if (zd > c && (c > 0 || zd > 0)) {
-          msgs.push(`Zero Dose (${zd}) > Covered (${c})`);
-          zdEl.classList.add("input-warning");
-        } else {
-          zdEl.classList.remove("input-warning");
-        }
+        // Zero Dose validation removed: clear any leftover warning style
+        zdEl.classList.remove("input-warning");
 
         covEl.classList.toggle("input-warning", covWarn);
         naEl.classList.toggle("input-warning", naWarn);
@@ -3221,33 +3223,47 @@
       return btoa(binary);
     }
 
+    // Last saved file kept in memory so the Share button also works in a normal browser (Web Share API)
+    let lastSavedFile = { bytes: null, mime: "" };
+
     function showSavedPathConfirmation(displayPath, fileUri, fileName) {
-      const banner = document.getElementById("savedPathBanner");
-      const pathText = document.getElementById("savedPathText");
-      const shareBtn = document.getElementById("btnShareSavedFile");
-
-      pathText.textContent = displayPath;
-      banner.classList.add("visible");
-
       const cap = window.Capacitor;
       const SharePlugin = cap && cap.Plugins && cap.Plugins.Share;
+      const bytes = lastSavedFile.bytes, mime = lastSavedFile.mime;
 
-      if (SharePlugin && fileUri) {
-        shareBtn.style.display = "inline-flex";
-        shareBtn.onclick = async () => {
-          try {
-            await SharePlugin.share({
-              title: fileName,
-              url: fileUri,
-              dialogTitle: "Share " + fileName
-            });
-          } catch (err) {
-            showToast("Share cancelled.");
+      // Browser share: needs a File and a browser that can share files (Chrome/Android, Safari/iOS)
+      let webFile = null;
+      try {
+        if (bytes && typeof File === "function" && navigator.share && navigator.canShare) {
+          const f = new File([bytes], fileName, { type: String(mime).split(";")[0] });
+          if (navigator.canShare({ files: [f] })) webFile = f;
+        }
+      } catch (e) { webFile = null; }
+
+      const canShare = !!((SharePlugin && fileUri) || webFile);
+      const doShare = async () => {
+        try {
+          if (SharePlugin && fileUri) {
+            await SharePlugin.share({ title: fileName, url: fileUri, dialogTitle: "Share " + fileName });
+          } else if (webFile) {
+            await navigator.share({ files: [webFile], title: fileName });
           }
-        };
-      } else {
-        shareBtn.style.display = "none";
-      }
+        } catch (err) {
+          if (err && err.name === "AbortError") showToast("Share cancelled.");
+          else showToast("Share failed: " + ((err && (err.name + " - " + err.message)) || "unknown error"));
+        }
+      };
+
+      // Tally screen banner + Home screen banner (under the Microplan button)
+      [["savedPathBanner", "savedPathText", "btnShareSavedFile"],
+       ["savedPathBannerHome", "savedPathTextHome", "btnShareSavedFileHome"]].forEach(([bId, tId, sId]) => {
+        const banner = document.getElementById(bId), pathText = document.getElementById(tId), shareBtn = document.getElementById(sId);
+        if (!banner || !pathText || !shareBtn) return;
+        pathText.textContent = displayPath;
+        banner.classList.add("visible");
+        shareBtn.style.display = canShare ? "inline-flex" : "none";
+        shareBtn.onclick = canShare ? doShare : null;
+      });
 
       showToast(`Saved: ${displayPath}`);
     }
@@ -3257,6 +3273,7 @@
      * using Capacitor Filesystem, with seamless fallback to browser download.
      */
     async function saveFileNativeOrWeb(uint8Bytes, fileName, mimeType) {
+      lastSavedFile = { bytes: uint8Bytes, mime: mimeType };
       const cap = window.Capacitor;
       const Filesystem = cap && cap.Plugins && cap.Plugins.Filesystem;
 
