@@ -1234,6 +1234,10 @@
             <input type="text" id="ccUCMO" autocomplete="off">
           </div>
           <div class="cc-full">
+            <label for="ccAIC">Area In-Charge Name (optional &mdash; pre-fills the data entry forms)</label>
+            <input type="text" id="ccAIC" autocomplete="off">
+          </div>
+          <div class="cc-full">
             <label for="ccUCUrdu">UC Name in Urdu (printed on the sheets)</label>
             <input type="text" id="ccUCUrdu" dir="rtl" placeholder="مثلاً: جام پور شرقی" autocomplete="off">
           </div>
@@ -4290,6 +4294,7 @@
       ["name", "ccName", "Campaign Name"], ["start", "ccStart", "Campaign Start Date"], ["end", "ccEnd", "Campaign End Date"],
       ["review", "ccReview", "Review Date"], ["district", "ccDistrict", "District Name"], ["tehsil", "ccTehsil", "Tehsil Name"],
       ["uc", "ccUC", "UC Name"], ["ucUrdu", "ccUCUrdu", "UC Name (Urdu)"], ["ucmo", "ccUCMO", "UCMO Name"], ["ucmoUrdu", "ccUCMOUrdu", "UCMO Name (Urdu)"],
+      ["aic", "ccAIC", "Area In-Charge Name"],
       ["aicMap", "ccAICMap", "AIC Names (Urdu)"]
     ];
 
@@ -4306,7 +4311,7 @@
       try { return JSON.parse(localStorage.getItem(CAMPAIGN_INFO_KEY) || "{}") || {}; } catch (e) { return {}; }
     }
 
-    const CC_OPTIONAL = ["aicMap"];
+    const CC_OPTIONAL = ["aicMap", "aic"];
     function missingCampaignFields(raw) {
       return CC_FIELDS.filter(([key]) => !CC_OPTIONAL.includes(key) && !String(raw[key] || "").trim()).map(f => f[2]);
     }
@@ -4321,7 +4326,7 @@
         year: ccYearOf(raw.start, raw.end),
         datesNoYear: ccDatesNoYear(raw.start, raw.end),
         review: formatReviewDate(raw.review),
-        district: t("district"), tehsil: t("tehsil"), uc: t("uc"), ucUrdu: t("ucUrdu"), ucmo: t("ucmo"), ucmoUrdu: t("ucmoUrdu"), aicMap: String(raw.aicMap || "")
+        district: t("district"), tehsil: t("tehsil"), uc: t("uc"), ucUrdu: t("ucUrdu"), ucmo: t("ucmo"), ucmoUrdu: t("ucmoUrdu"), aic: t("aic"), aicMap: String(raw.aicMap || "")
       };
     }
 
@@ -4361,13 +4366,32 @@
       set("hcLine2", [ci.district, ci.tehsil, ci.uc && ("UC " + ci.uc), ci.ucmo && ("UCMO: " + ci.ucmo)].filter(Boolean).join(" › "));
     }
 
-    // Pushes District / Tehsil / UC / UCMO into the tally form's admin fields
+    // Pushes District / Tehsil / UC / UCMO / Area In-Charge into the tally form's admin fields
     function applySetupToTallyForm(force) {
       const ci = getCampaignInfo();
-      [["f_District", ci.district], ["f_Tehsil", ci.tehsil], ["f_UC", ci.uc], ["f_UCMO", ci.ucmo]].forEach(([id, val]) => {
+      [["f_District", ci.district], ["f_Tehsil", ci.tehsil], ["f_UC", ci.uc], ["f_UCMO", ci.ucmo], ["f_Area_In_Charge", ci.aic]].forEach(([id, val]) => {
         const el = document.getElementById(id);
         if (!el || !val) return;
         if (force || !el.value) { el.value = val; el.dispatchEvent(new Event("input", { bubbles: true })); }
+      });
+    }
+
+    // Pushes the same values into the embedded Hamlets Data Entry form (field-district / -tehsil / -uc / -ucmo / -aic)
+    // mode: "all" = overwrite every field | "load" = overwrite all except AIC (keeps last-used AIC) | "fill" = only empty fields
+    function applySetupToHamletsForm(mode) {
+      const frame = document.getElementById("hamletsFrame");
+      let doc = null;
+      try { doc = frame && frame.contentDocument; } catch (e) { return; }
+      if (!doc || !doc.getElementById("field-district")) return;
+      const ci = getCampaignInfo();
+      [["field-district", "district"], ["field-tehsil", "tehsil"], ["field-uc", "uc"], ["field-ucmo", "ucmo"], ["field-aic", "aic"]].forEach(([id, key]) => {
+        const el = doc.getElementById(id), val = ci[key];
+        if (!el || !val) return;
+        const overwrite = mode === "all" || (mode === "load" && key !== "aic");
+        if (overwrite || !el.value) {
+          el.value = val;
+          el.dispatchEvent(new doc.defaultView.Event("input", { bubbles: true }));
+        }
       });
     }
 
@@ -4375,6 +4399,7 @@
       saveCampaignInfo();
       if (missingCampaignFields(loadCampaignRaw()).length) return;
       applySetupToTallyForm(true);
+      applySetupToHamletsForm("all");
       renderHomeCampaignSummary();
       showScreen("home");
     }
@@ -5216,6 +5241,14 @@
       const frame = document.getElementById("hamletsFrame");
       if (frame.dataset.loaded === "1") return;
       const bytes = Uint8Array.from(atob(HAMLETS_APP_B64), c => c.charCodeAt(0));
+      frame.addEventListener("load", () => {
+        applySetupToHamletsForm("load");
+        // When "Lock Team Header" is off the form clears after each save: refill the blanks from Campaign Setup
+        try {
+          const f = frame.contentDocument.getElementById("microplan-form");
+          if (f) f.addEventListener("submit", () => setTimeout(() => applySetupToHamletsForm("fill"), 0));
+        } catch (e) { /* ignore */ }
+      }, { once: true });
       frame.srcdoc = new TextDecoder("utf-8").decode(bytes);
       frame.dataset.loaded = "1";   // loaded once; data entry state is kept when switching screens
     }
@@ -5228,7 +5261,8 @@
       document.getElementById("homeScreen").classList.toggle("screen-hidden", name !== "home");
       document.getElementById("tallyApp").classList.toggle("screen-hidden", name !== "tally");
       document.getElementById("hamletsApp").classList.toggle("screen-hidden", name !== "hamlets");
-      if (name === "hamlets") loadHamletsFrameOnce();
+      if (name === "hamlets") { loadHamletsFrameOnce(); applySetupToHamletsForm("fill"); }
+      if (name === "tally") applySetupToTallyForm(false);
       window.scrollTo(0, 0);
     }
   </script>
