@@ -1,6 +1,6 @@
 {
   "appId": "org.rajanpur.campaigntally",
-  "appName": "Campaign Tally Entry",
+  "appName": "Microplan Data Entry",
   "webDir": "www",
   "bundledWebRuntime": false,
   "android": {
