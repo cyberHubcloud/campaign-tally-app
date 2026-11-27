@@ -1077,6 +1077,35 @@
       transition: transform 0.1s, box-shadow 0.15s;
     }
     .home-btn:active { transform: scale(0.98); }
+    .campaign-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-lg, 14px);
+      box-shadow: var(--shadow-sm);
+      padding: 16px 18px;
+    }
+    .campaign-card h2 { margin: 0 0 2px; font-size: 1.05rem; font-weight: 800; color: var(--primary-dark); }
+    .campaign-card .cc-note { margin: 0 0 12px; font-size: 0.78rem; color: var(--text-muted); }
+    .campaign-card .cc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .campaign-card .cc-full { grid-column: 1 / -1; }
+    .campaign-card label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
+    .campaign-card textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; font-size: 0.95rem; font-family: inherit; border: 1.5px solid var(--border); border-radius: 10px; resize: vertical; }
+    .campaign-card input, .campaign-card select {
+      width: 100%; box-sizing: border-box; padding: 10px 12px; font-size: 0.95rem; font-family: inherit;
+      border: 1.5px solid var(--border); border-radius: 10px; background: #ffffff; color: var(--text-main);
+    }
+    .campaign-card input:focus, .campaign-card select:focus { outline: none; border-color: var(--border-focus); }
+    .cc-choice { display: flex; gap: 8px; flex-wrap: nowrap; }
+    .cc-choice-btn { flex: 1 1 0; min-width: 0; white-space: nowrap; padding: 11px 10px; font-size: 0.95rem; font-weight: 700; font-family: inherit; cursor: pointer;
+      color: var(--text-muted); background: #ffffff; border: 1.5px solid var(--border); border-radius: 10px; }
+    .cc-choice-btn.active { color: #ffffff; background: var(--primary); border-color: var(--primary); }
+    .cc-edit-btn { flex: 0 0 auto; padding: 6px 14px; font-size: 0.8rem; font-weight: 700; font-family: inherit; cursor: pointer;
+      color: var(--primary-dark); background: var(--primary-soft); border: 1.5px solid var(--primary); border-radius: 999px; }
+    .cc-missing { margin-top: 6px; font-size: 0.78rem; color: #b45309; min-height: 1.1em; }
+    .cc-continue-btn { width: 100%; margin-top: 10px; padding: 13px; font-size: 1rem; font-weight: 800; font-family: inherit;
+      color: #ffffff; background: var(--primary); border: 0; border-radius: 12px; cursor: pointer; }
+    .cc-continue-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+    .campaign-card .cc-preview { margin-top: 10px; font-size: 0.82rem; color: var(--primary-dark); font-weight: 700; min-height: 1.1em; }
     .home-btn-title { font-size: 1.2rem; font-weight: 800; color: var(--primary-dark); }
     .home-btn-desc { font-size: 0.82rem; color: var(--text-muted); }
 
@@ -1100,14 +1129,89 @@
 <body>
 
   <!-- ========================================================================
+       SETUP SCREEN (shown first until all campaign details are filled)
+       ======================================================================== -->
+  <div id="setupScreen" class="home-screen">
+    <div class="home-hero">
+      <h1>Campaign Setup</h1>
+      <p>Fill these details first. They are printed on the AIC &amp; UCMO Summary sheets.</p>
+    </div>
+    <div class="home-buttons">
+      <div class="campaign-card">
+        <div class="cc-grid">
+          <div class="cc-full">
+            <label for="ccName">Campaign Name</label>
+            <div class="cc-choice" data-for="ccName"><button type="button" class="cc-choice-btn" data-value="SNID">SNID</button><button type="button" class="cc-choice-btn" data-value="NID">NID</button></div>
+            <input type="hidden" id="ccName">
+          </div>
+          <div>
+            <label for="ccStart">Campaign Start Date</label>
+            <input type="date" id="ccStart">
+          </div>
+          <div>
+            <label for="ccEnd">Campaign End Date</label>
+            <input type="date" id="ccEnd">
+          </div>
+          <div class="cc-full">
+            <label for="ccReview">Review Date</label>
+            <input type="date" id="ccReview">
+          </div>
+          <div class="cc-full">
+            <label for="ccDistrict">District Name</label>
+            <input type="text" id="ccDistrict" autocomplete="off">
+          </div>
+          <div class="cc-full">
+            <label for="ccTehsil">Tehsil Name</label>
+            <div class="cc-choice" data-for="ccTehsil"><button type="button" class="cc-choice-btn" data-value="Jampur">Jampur</button><button type="button" class="cc-choice-btn" data-value="Rajanpur">Rajanpur</button><button type="button" class="cc-choice-btn" data-value="Rojhan">Rojhan</button></div>
+            <input type="hidden" id="ccTehsil">
+          </div>
+          <div>
+            <label for="ccUC">UC Name</label>
+            <input type="text" id="ccUC" autocomplete="off">
+          </div>
+          <div>
+            <label for="ccUCMO">UCMO Name</label>
+            <input type="text" id="ccUCMO" autocomplete="off">
+          </div>
+          <div class="cc-full">
+            <label for="ccUCUrdu">UC Name in Urdu (printed on the sheets)</label>
+            <input type="text" id="ccUCUrdu" dir="rtl" placeholder="مثلاً: جام پور شرقی" autocomplete="off">
+          </div>
+          <div class="cc-full">
+            <label for="ccUCMOUrdu">UCMO Name in Urdu (printed on the UCMO sheet)</label>
+            <input type="text" id="ccUCMOUrdu" dir="rtl" autocomplete="off">
+          </div>
+          <div class="cc-full">
+            <label for="ccAICMap">AIC Names in Urdu (optional) &mdash; one per line: English name = Urdu name</label>
+            <textarea id="ccAICMap" rows="3" placeholder="ABD = عبداللہ"></textarea>
+          </div>
+        </div>
+        <div class="cc-preview" id="ccPreview"></div>
+        <div class="cc-missing" id="ccMissing"></div>
+        <button type="button" class="cc-continue-btn" id="ccContinueBtn" onclick="submitCampaignSetup()" disabled>Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
        HOME SCREEN (two main buttons)
        ======================================================================== -->
-  <div id="homeScreen" class="home-screen">
+  <div id="homeScreen" class="home-screen screen-hidden">
     <div class="home-hero">
       <h1>Campaign Tally Sheet</h1>
       <p>Select what you want to work on</p>
     </div>
     <div class="home-buttons">
+      <div class="campaign-card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+          <div>
+            <h2 id="hcName">Campaign Details</h2>
+            <div class="cc-preview" id="hcLine1" style="margin-top:2px;"></div>
+            <div class="cc-note" id="hcLine2" style="margin:4px 0 0;"></div>
+          </div>
+          <button type="button" class="cc-edit-btn" onclick="editCampaignSetup()">Edit</button>
+        </div>
+      </div>
       <button type="button" class="home-btn" onclick="showScreen('tally')">
         <span class="home-btn-title">1. Tally Sheet Analysis</span>
         <span class="home-btn-desc">MT / FT / TT team data entry, saved records &amp; Excel export</span>
@@ -1116,13 +1220,21 @@
         <span class="home-btn-title">2. Hamlets Data Entry</span>
         <span class="home-btn-desc">Field microplanning: routes, teams &amp; household microplan</span>
       </button>
+      <button type="button" class="home-btn" onclick="exportHamletsDataWorkbook()">
+        <span class="home-btn-title">3. Hamlets Data</span>
+        <span class="home-btn-desc">Download formatted Master List of Settlements, Mohallahs, Hamlets &amp; Derajats Excel sheet</span>
+      </button>
       <button type="button" class="home-btn" onclick="exportAICSummaryWorkbook()">
-        <span class="home-btn-title">3. AIC Summary Sheet</span>
+        <span class="home-btn-title">4. AIC Summary Sheet</span>
         <span class="home-btn-desc">Download Area In-Charge-wise summary workbook using the exact AIC Summary template</span>
       </button>
+      <button type="button" class="home-btn" onclick="exportUCMOSummaryWorkbook()">
+        <span class="home-btn-title">5. UCMO Summary Sheet</span>
+        <span class="home-btn-desc">Download Union Council (UC)-wise UCMO Summary workbook using the exact UCMO Summary template</span>
+      </button>
       <button type="button" class="home-btn" onclick="exportMicroplanWorkbook()">
-        <span class="home-btn-title">4. Microplan</span>
-        <span class="home-btn-desc">Download one Excel file: Mobile Team, Fixed_Transit Team, Operational sheet, Hamlets Data Sheet &amp; AIC Summary</span>
+        <span class="home-btn-title">6. Microplan</span>
+        <span class="home-btn-desc">Download one Excel file: UCMO Summary, Mobile Team, Fixed_Transit Team, Operational sheet, Hamlets Data Sheet, AIC Summary &amp; Hamlets Data</span>
       </button>
     </div>
   </div>
@@ -3588,6 +3700,15 @@
         ws.getColumn(idx + 1).width = Math.min(28, Math.max(12, h.length + 3));
       });
       ws.views = [{ state: "frozen", ySplit: 1 }];
+
+      // Print setup: A4 landscape, header row repeated on every page, wide tables split into equal page-wide parts
+      const colCount = headersList.length;
+      const pagesWide = Math.max(1, Math.ceil(colCount / 16));
+      ws.pageSetup = {
+        paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: pagesWide, fitToHeight: 0,
+        printTitlesRow: "1:1", printArea: "A1:" + ws.getColumn(colCount).letter + Math.max(2, recordsList.length + 1),
+        margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 }
+      };
     }
 
     // Default (fixed) parts of the exported Operational Sheet that must always be yellow.
@@ -3733,9 +3854,38 @@
       });
     }
 
+    // G1 / G2 / G3 grade from a day's total households (column G of the Operational Sheet):
+    //   >= 61 -> G1,  41-60 -> G2,  <= 40 -> G3.  No data (0 / blank) -> "" so an empty day is not graded G3.
+    function getGCriteria(hh) {
+      const n = Number(hh);
+      if (!isFinite(n) || n <= 0) return "";
+      if (n >= 61) return "G1";
+      if (n >= 41) return "G2";
+      return "G3";
+    }
+
     function populateOperationalTemplateSheet(ws, mobileTeams, hamletsByTeamDay = new Map()) {
       // Remember the template's default (yellow) texts before anything is cleared
       const yellowDefaults = captureYellowDefaults(ws);
+
+      // Print setup: A4 landscape, 1 page wide, ONE team block (12 rows) per page, header rows 1-7 repeated,
+      // print area grows with the number of teams (the template only covered 2 teams)
+      const opBlocks = Math.max(1, (mobileTeams || []).length);
+      const opLastRow = 8 + 12 * opBlocks;
+      ws.pageSetup = {
+        paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+        horizontalCentered: true, printArea: "A1:Y" + opLastRow, printTitlesRow: "1:7",
+        margins: { left: 0.25, right: 0.25, top: 0.3, bottom: 0.3, header: 0.15, footer: 0.15 }
+      };
+      ws.rowBreaks = [];
+      for (let k = 1; k < opBlocks; k++) ws.getRow(8 + 12 * k).addPageBreak(0, 16384);
+
+      // Header: campaign name (A1), year (B1), dates (C1:F2) and review date (Q1:S2) from the home-page setup
+      const opCi = getCampaignInfo();
+      if (opCi.name) ws.getCell("A1").value = opCi.name;
+      if (opCi.year !== "" || opCi.datesNoYear) ws.getCell("B1").value = opCi.year;
+      if (opCi.datesNoYear) ws.getCell("C1").value = opCi.datesNoYear;
+      if (opCi.review) ws.getCell("Q1").value = opCi.review;
 
       // Clear sample values in existing template team blocks (Rows 9-32) while keeping static labels
       for (let r = 9; r <= 32; r++) {
@@ -3814,6 +3964,11 @@
           ws.getCell(`E${rowIdx}`).value = houseVal;
           ws.getCell(`F${rowIdx}`).value = schoolVal;
           ws.getCell(`G${rowIdx}`).value = hhVal;
+          // G1/G2/G3 column (I), graded from that day's HH in G9 / G12 / G15 (G9:G11, G12:G14, G15:G17 are merged per day).
+          // Template merges in column I are I10:I11 (Day 1), I12:I14 (Day 2), I15:I17 (Day 3), so Day 1 is written to the
+          // I10 anchor (startRow + 1), not I9. Day 2 -> I12 (startRow + 3), Day 3 -> I15 (startRow + 6).
+          const gRow = day === 1 ? rowIdx + 1 : rowIdx;
+          ws.getCell(`I${gRow}`).value = getGCriteria(hhVal);
         });
 
         const sumRow = startRow + 9;
@@ -3873,7 +4028,7 @@
       });
     }
 
-    // Button 4 on the home screen: one workbook with all five sheets
+    // Button 5 on the home screen: one workbook with all five sheets
     async function exportMicroplanWorkbook() {
       return exportExcelWorkbook({ includeHamlets: true });
     }
@@ -3898,8 +4053,8 @@
         await templateWb.xlsx.load(decodeBase64ToArrayBuffer(EMBEDDED_OPERATIONAL_TEMPLATE_B64));
         const templateOpWs = templateWb.getWorksheet("Mobile Team") || templateWb.worksheets[0];
 
-        // Rename the embedded template sheet to "operational sheet"
-        templateOpWs.name = "operational sheet";
+        // Rename the embedded template sheet to "Operational Sheet"
+        templateOpWs.name = "Operational Sheet";
 
         const ordered = [...savedRecords].reverse();
         const mobileTeams = getSequentialMobileTeams(savedRecords);
@@ -3931,16 +4086,16 @@
         populateTallyRecordsSheet(wsFixedTransit, fixedTransitTeams, FT_TT_HEADERS);
 
         // Ensure exact worksheet tab order:
-        // 1. Mobile Team | 2. Fixed_Transit Team | 3. operational sheet | 4. Hamlets Data Sheet | 5. AIC Summary
-        wsMobile.orderNo = 0;
-        wsFixedTransit.orderNo = 1;
-        templateOpWs.orderNo = 2;
+        // 1. UCMO Summary | 2. AIC Summary | 3. Hamlets Data | 4. operational sheet | 5. Mobile Team | 6. Fixed_Transit Team | 7. Hamlets Data Sheet
+        templateOpWs.orderNo = 3;
+        wsMobile.orderNo = 4;
+        wsFixedTransit.orderNo = 5;
 
         if (includeHamlets) {
           const hamletRows = getHamletSheetRows();
           const wsHamlets = templateWb.addWorksheet("Hamlets Data Sheet");
           populateTallyRecordsSheet(wsHamlets, hamletRows, HAMLET_SHEET_HEADERS);
-          wsHamlets.orderNo = 3;
+          wsHamlets.orderNo = 6;
           if (hamletRows.length === 0) {
             showToast("No hamlet entries found - Hamlets Data Sheet has headers only.");
           }
@@ -3949,9 +4104,34 @@
           const aicWb = await buildAICSummaryWorkbook(savedRecords);
           const aicSrcWs = aicWb.getWorksheet("AIC Summary") || aicWb.worksheets[0];
           const wsAIC = templateWb.addWorksheet("AIC Summary");
-          copyWorksheetInto(aicSrcWs, wsAIC);
-          wsAIC.orderNo = 4;
+          copyWorksheetInto(aicSrcWs, wsAIC, { copyPageBreaks: true });
+          wsAIC.orderNo = 1;
+
+          // Sheet 6: "Hamlets Data" (formatted Master List of Settlements, Mohallahs, Hamlets & Derajats
+          // - same layout as the Hamlets Data button) placed right after AIC Summary
+          const hamletsBuilt = await buildHamletsDataWorkbook(hamletRawEntries);
+          const wsHamletsMaster = templateWb.addWorksheet("Hamlets Data");
+          copyWorksheetInto(hamletsBuilt.ws, wsHamletsMaster, {
+            views: hamletsBuilt.ws.views,
+            copyPageBreaks: true
+          });
+          wsHamletsMaster.orderNo = 2;
+
+          // UCMO Summary goes in as the very first sheet, before Mobile Team
+          const ucmoBuilt = await buildUCMOSummaryWorkbook(savedRecords);
+          const wsUCMO = templateWb.addWorksheet("UCMO Summary");
+          copyWorksheetInto(ucmoBuilt.worksheets[0], wsUCMO, {
+            views: ucmoBuilt.worksheets[0].views,
+            copyPageBreaks: true
+          });
+          wsUCMO.orderNo = 0;
         }
+
+        // Open on the first tab only (avoid several selected tabs = grouped sheets)
+        templateWb.views = [{ x: 0, y: 0, width: 19420, height: 10300, firstSheet: 0, activeTab: 0, visibility: "visible" }];
+        [...templateWb.worksheets].sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0)).forEach((w, i) => {
+          if (Array.isArray(w.views) && w.views.length) w.views = w.views.map(v => Object.assign({}, v, { tabSelected: i === 0 }));
+        });
 
         const outBuffer = await templateWb.xlsx.writeBuffer();
         const dateStr = new Date().toISOString().slice(0, 10);
@@ -3967,6 +4147,222 @@
         console.error(err);
         showToast("Error generating Excel file: " + (err.message || "Unknown error"));
       }
+    }
+
+
+    /* ========================================================================
+       CAMPAIGN DETAILS (home page) - name, dates & review date used by AIC / UCMO Summary
+       ======================================================================== */
+    const CAMPAIGN_INFO_KEY = "campaign_info_v1";
+    const CC_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    function ccParseISO(iso) {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
+      return m ? { y: +m[1], m: +m[2], d: +m[3] } : null;
+    }
+
+    // "2026 6 July to 9 July" (same year) | "28 December 2026 to 2 January 2027" (year changes)
+    function formatCampaignDates(startISO, endISO) {
+      const a = ccParseISO(startISO), b = ccParseISO(endISO);
+      const dm = (x) => `${x.d} ${CC_MONTHS[x.m - 1]}`;
+      if (a && b) return a.y === b.y ? `${a.y} ${dm(a)} to ${dm(b)}` : `${dm(a)} ${a.y} to ${dm(b)} ${b.y}`;
+      if (a) return `${a.y} ${dm(a)}`;
+      if (b) return `${b.y} ${dm(b)}`;
+      return "";
+    }
+
+    // Year shown in its own cell on the Operational Sheet ("" when the campaign crosses two years)
+    function ccYearOf(startISO, endISO) {
+      const a = ccParseISO(startISO), b = ccParseISO(endISO);
+      if (a && b) return a.y === b.y ? a.y : "";
+      return (a || b) ? (a || b).y : "";
+    }
+
+    // "6 July to 9 July" (same year) - the year goes in its own cell; if the years differ the years are kept in the text
+    function ccDatesNoYear(startISO, endISO) {
+      const a = ccParseISO(startISO), b = ccParseISO(endISO);
+      const dm = (x) => `${x.d} ${CC_MONTHS[x.m - 1]}`;
+      if (a && b) return a.y === b.y ? `${dm(a)} to ${dm(b)}` : `${dm(a)} ${a.y} to ${dm(b)} ${b.y}`;
+      if (a) return dm(a);
+      if (b) return dm(b);
+      return "";
+    }
+
+    // "02 July 2026"
+    function formatReviewDate(iso) {
+      const x = ccParseISO(iso);
+      return x ? `${String(x.d).padStart(2, "0")} ${CC_MONTHS[x.m - 1]} ${x.y}` : "";
+    }
+
+    const CC_FIELDS = [
+      ["name", "ccName", "Campaign Name"], ["start", "ccStart", "Campaign Start Date"], ["end", "ccEnd", "Campaign End Date"],
+      ["review", "ccReview", "Review Date"], ["district", "ccDistrict", "District Name"], ["tehsil", "ccTehsil", "Tehsil Name"],
+      ["uc", "ccUC", "UC Name"], ["ucUrdu", "ccUCUrdu", "UC Name (Urdu)"], ["ucmo", "ccUCMO", "UCMO Name"], ["ucmoUrdu", "ccUCMOUrdu", "UCMO Name (Urdu)"],
+      ["aicMap", "ccAICMap", "AIC Names (Urdu)"]
+    ];
+
+    function readCampaignInputs() {
+      const o = {};
+      CC_FIELDS.forEach(([key, id]) => {
+        const v = (document.getElementById(id) || {}).value || "";
+        o[key] = key === "start" || key === "end" || key === "review" ? v : v.trim();
+      });
+      return o;
+    }
+
+    function loadCampaignRaw() {
+      try { return JSON.parse(localStorage.getItem(CAMPAIGN_INFO_KEY) || "{}") || {}; } catch (e) { return {}; }
+    }
+
+    const CC_OPTIONAL = ["aicMap"];
+    function missingCampaignFields(raw) {
+      return CC_FIELDS.filter(([key]) => !CC_OPTIONAL.includes(key) && !String(raw[key] || "").trim()).map(f => f[2]);
+    }
+
+    // Read from the saved values so it works even if the setup inputs are not on screen
+    function getCampaignInfo() {
+      const raw = loadCampaignRaw();
+      const t = (k) => String(raw[k] || "").trim();
+      return {
+        name: t("name"),
+        dates: formatCampaignDates(raw.start, raw.end),
+        year: ccYearOf(raw.start, raw.end),
+        datesNoYear: ccDatesNoYear(raw.start, raw.end),
+        review: formatReviewDate(raw.review),
+        district: t("district"), tehsil: t("tehsil"), uc: t("uc"), ucUrdu: t("ucUrdu"), ucmo: t("ucmo"), ucmoUrdu: t("ucmoUrdu"), aicMap: String(raw.aicMap || "")
+      };
+    }
+
+    function syncChoiceButtons() {
+      document.querySelectorAll(".cc-choice").forEach(group => {
+        const input = document.getElementById(group.getAttribute("data-for"));
+        const val = input ? input.value : "";
+        group.querySelectorAll(".cc-choice-btn").forEach(b => b.classList.toggle("active", b.getAttribute("data-value") === val));
+      });
+    }
+
+    function refreshSetupState() {
+      syncChoiceButtons();
+      const cur = readCampaignInputs();
+      const missing = missingCampaignFields(cur);
+      const prev = document.getElementById("ccPreview");
+      if (prev) {
+        const dates = formatCampaignDates(cur.start, cur.end), rev = formatReviewDate(cur.review);
+        prev.textContent = [dates && ("Dates: " + dates), rev && ("Review: " + rev)].filter(Boolean).join("   |   ");
+      }
+      const miss = document.getElementById("ccMissing");
+      if (miss) miss.textContent = missing.length ? "Still needed: " + missing.join(", ") : "";
+      const btn = document.getElementById("ccContinueBtn");
+      if (btn) btn.disabled = missing.length > 0;
+    }
+
+    function saveCampaignInfo() {
+      try { localStorage.setItem(CAMPAIGN_INFO_KEY, JSON.stringify(readCampaignInputs())); } catch (e) { /* ignore */ }
+      refreshSetupState();
+    }
+
+    function renderHomeCampaignSummary() {
+      const ci = getCampaignInfo();
+      const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+      set("hcName", ci.name || "Campaign Details");
+      set("hcLine1", [ci.dates && ("Dates: " + ci.dates), ci.review && ("Review: " + ci.review)].filter(Boolean).join("   |   "));
+      set("hcLine2", [ci.district, ci.tehsil, ci.uc && ("UC " + ci.uc), ci.ucmo && ("UCMO: " + ci.ucmo)].filter(Boolean).join(" › "));
+    }
+
+    // Pushes District / Tehsil / UC / UCMO into the tally form's admin fields
+    function applySetupToTallyForm(force) {
+      const ci = getCampaignInfo();
+      [["f_District", ci.district], ["f_Tehsil", ci.tehsil], ["f_UC", ci.uc], ["f_UCMO", ci.ucmo]].forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        if (!el || !val) return;
+        if (force || !el.value) { el.value = val; el.dispatchEvent(new Event("input", { bubbles: true })); }
+      });
+    }
+
+    function submitCampaignSetup() {
+      saveCampaignInfo();
+      if (missingCampaignFields(loadCampaignRaw()).length) return;
+      applySetupToTallyForm(true);
+      renderHomeCampaignSummary();
+      showScreen("home");
+    }
+
+    function editCampaignSetup() {
+      const raw = loadCampaignRaw();
+      CC_FIELDS.forEach(([key, id]) => { const el = document.getElementById(id); if (el) el.value = raw[key] || ""; });
+      refreshSetupState();
+      showScreen("setup");
+    }
+
+    function initCampaignInfo() {
+      const raw = loadCampaignRaw();
+      CC_FIELDS.forEach(([key, id]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.value = raw[key] || "";
+        el.addEventListener("input", saveCampaignInfo);
+        el.addEventListener("change", saveCampaignInfo);
+      });
+      document.querySelectorAll(".cc-choice-btn").forEach(btn => btn.addEventListener("click", () => {
+        const input = document.getElementById(btn.parentElement.getAttribute("data-for"));
+        if (!input) return;
+        input.value = btn.getAttribute("data-value");
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      }));
+      refreshSetupState();
+      renderHomeCampaignSummary();
+      // Existing saved details complete -> skip the setup page
+      if (!missingCampaignFields(raw).length) showScreen("home");
+      window.addEventListener("DOMContentLoaded", () => applySetupToTallyForm(false));
+    }
+
+    // English -> Urdu for names printed on the summary sheets (unknown words are left as typed)
+    const CC_URDU_WORDS = {
+      "jampur": "جام پور", "rajanpur": "راجن پور", "rojhan": "روجھان",
+      "sharqi": "شرقی", "gharbi": "غربی", "shumali": "شمالی", "janubi": "جنوبی"
+    };
+    function toUrdu(text) {
+      return String(text || "").trim().split(/\s+/).filter(Boolean)
+        .map(w => CC_URDU_WORDS[w.toLowerCase()] || w).join(" ");
+    }
+    // UC name in Urdu: the Urdu name typed on the setup page when it is the setup UC, else word-by-word translation
+    function ucNameUrdu(ucName, ci) {
+      const n = String(ucName || "").trim();
+      if (ci.ucUrdu && (!n || n === "Unassigned UC" || n.toLowerCase() === ci.uc.toLowerCase())) return ci.ucUrdu;
+      return toUrdu(n);
+    }
+
+    // AIC name in Urdu: looked up (case-insensitive) in the "English = Urdu" list from the setup page; else as typed
+    function aicNameUrdu(name, ci) {
+      const n = String(name || "").trim();
+      const key = n.toLowerCase();
+      let found = "";
+      String(ci.aicMap || "").split(/\r?\n/).forEach(line => {
+        const m = /^(.*?)\s*[=:]\s*(.+)$/.exec(line.trim());
+        if (m && m[1].trim().toLowerCase() === key) found = m[2].trim();
+      });
+      return found || n;
+    }
+
+    // Writes "Name    2026 6 July to 9 July" on ONE bold line (shrunk to fit the cell); merges the range if given
+    function writeCampaignCell(ws, addr, mergeRange) {
+      const ci = getCampaignInfo();
+      const text = [ci.name, ci.dates].filter(Boolean).join("    ");
+      if (!text) return;
+      if (mergeRange) { try { ws.mergeCellsWithoutStyle(mergeRange); } catch (e) { /* already merged */ } }
+      const cell = ws.getCell(addr);
+      cell.value = text;
+      cell.font = Object.assign({}, cell.font || {}, { bold: true });
+      cell.alignment = { horizontal: "center", vertical: "middle", wrapText: false, shrinkToFit: true };
+    }
+
+    // Review date, e.g. "02 July 2026", bold and centred
+    function writeReviewCell(ws, addr, text) {
+      if (!text) return;
+      const cell = ws.getCell(addr);
+      cell.value = text;
+      cell.font = Object.assign({}, cell.font || {}, { bold: true });
+      cell.alignment = { horizontal: "center", vertical: "middle", wrapText: false, shrinkToFit: true };
     }
 
 
@@ -4106,26 +4502,32 @@
 
       // Header & Admin Info
       ws.getCell(`T${r(1)}`).value = aicData.aic;
-      ws.getCell(`A${r(4)}`).value = aicData.uc;
-      ws.getCell(`E${r(4)}`).value = aicData.tehsil;
-      ws.getCell(`N${r(4)}`).value = aicData.district;
-      ws.getCell(`R${r(5)}`).value = `ایریا انچارج کا نام : ${aicData.aic}`;
+      const ci = getCampaignInfo();
+      ws.getCell(`A${r(4)}`).value = ucNameUrdu(aicData.uc || ci.uc, ci);
+      ws.getCell(`E${r(4)}`).value = toUrdu(ci.tehsil || aicData.tehsil);
+      ws.getCell(`R${r(5)}`).value = "ایریا انچارج کا نام :";                       // label only
+      const aicNameCell = ws.getCell(`N${r(5)}`);                                // AIC name goes in merged N5:Q5
+      aicNameCell.value = aicNameUrdu(aicData.aic, ci);
+      aicNameCell.font = Object.assign({}, aicNameCell.font || {}, { bold: true });
+      aicNameCell.alignment = { horizontal: "center", vertical: "middle", wrapText: false, shrinkToFit: true };
+      writeCampaignCell(ws, `Q${r(4)}`, null);                                   // Campaign name + dates (Q4:S4 already merged)
+      writeReviewCell(ws, `A${r(1)}`, ci.review);                   // Review date (A1:D2)
 
       // Row 7: Recorded / Covered Children & HH Summary
       ws.getCell(`A${r(7)}`).value = totalChildrenCov;
       ws.getCell(`C${r(7)}`).value = aicData.ftCov;
       ws.getCell(`G${r(7)}`).value = aicData.ttCov;
       ws.getCell(`L${r(7)}`).value = aicData.schoolsCov;
-      ws.getCell(`P${r(7)}`).value = houseChildrenCov;
-      ws.getCell(`R${r(7)}`).value = aicData.hhRec;
+      ws.getCell(`P${r(7)}`).value = aicData.mtTarget;
+      ws.getCell(`R${r(7)}`).value = aicData.hhTarget;
 
       // Row 9: Target / Planned Children & HH Summary
       ws.getCell(`A${r(9)}`).value = totalChildrenTar;
       ws.getCell(`C${r(9)}`).value = aicData.ftCov;
       ws.getCell(`G${r(9)}`).value = aicData.ttCov;
       ws.getCell(`L${r(9)}`).value = aicData.schoolsCov;
-      ws.getCell(`P${r(9)}`).value = houseChildrenTar;
-      ws.getCell(`R${r(9)}`).value = aicData.hhTarget;
+      ws.getCell(`P${r(9)}`).value = aicData.mtTarget;
+      ws.getCell(`R${r(9)}`).value = aicData.hhRec;
 
       // Row 10-11: Team Counts & Tally Sheets
       ws.getCell(`I${r(10)}`).value = aicData.ttCount;
@@ -4159,12 +4561,26 @@
         }
         fillAICSummaryBlock(ws, startRow, aicData);
       });
+
+      // Print setup: A4 landscape, 1 page wide, ONE Area In-Charge per printed page, print area = ALL blocks
+      const aicLastRow = (aicGroups.length - 1) * BLOCK_STRIDE + 24;
+      const aicMargins = (ws.pageSetup && ws.pageSetup.margins) || {
+        left: 0.8, right: 0.16, top: 0.99, bottom: 0.16, header: 0.3, footer: 0.3
+      };
+      ws.pageSetup = {
+        paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+        horizontalCentered: true, margins: aicMargins, printArea: "A1:T" + aicLastRow
+      };
+      ws.rowBreaks = [];
+      for (let k = 0; k < aicGroups.length - 1; k++) {
+        ws.getRow(1 + k * BLOCK_STRIDE + BLOCK_STRIDE - 1).addPageBreak(0, 16384);
+      }
       return wb;
     }
 
     // Copies a finished worksheet (values, styles, merges, column widths, row heights, page setup)
     // from one workbook into a sheet of another workbook.
-    function copyWorksheetInto(srcWs, dstWs) {
+    function copyWorksheetInto(srcWs, dstWs, opts) {
       // Column widths
       (srcWs.columns || []).forEach((col, i) => {
         if (!col) return;
@@ -4192,17 +4608,298 @@
         try { dstWs.mergeCellsWithoutStyle(rangeStr); } catch (e) { /* already merged */ }
       });
 
-      // Same explicit zoom as the standalone AIC Summary file (10%)
-      dstWs.views = [{ state: "normal", zoomScale: 10, zoomScaleNormal: 10, activeCell: "A1" }];
+      // View: default = same explicit zoom as the standalone AIC Summary file (10%);
+      // callers can pass their own view (e.g. the Hamlets Data sheet keeps its frozen header / 87% zoom)
+      dstWs.views = (opts && opts.views)
+        ? JSON.parse(JSON.stringify(opts.views))
+        : [{ state: "normal", zoomScale: 10, zoomScaleNormal: 10, activeCell: "A1" }];
+
+      // Manual page breaks (one printed page per block in Hamlets Data)
+      if (opts && opts.copyPageBreaks && Array.isArray(srcWs.rowBreaks)) {
+        srcWs.rowBreaks.forEach(b => {
+          try { dstWs.getRow(b.id).addPageBreak(0, 16384); } catch (e) { /* ignore */ }
+        });
+      }
 
       // Page setup (landscape / fit-to-width etc.)
       try {
         if (srcWs.pageSetup) {
           const ps = JSON.parse(JSON.stringify(srcWs.pageSetup));
           delete ps.r_id; delete ps.rId;
+          if (!(ps.horizontalDpi > 0 && ps.horizontalDpi <= 65535)) delete ps.horizontalDpi;
+          if (!(ps.verticalDpi > 0 && ps.verticalDpi <= 65535)) delete ps.verticalDpi;
           dstWs.pageSetup = ps;
         }
       } catch (e) { /* ignore page setup errors */ }
+    }
+
+
+    // Embedded Hamlets Data Template (stripped to 'Hamlets Data' sheet only)
+    const EMBEDDED_HAMLETS_DATA_TEMPLATE_B64 = "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";
+
+    function parseDayNumber(dayVal) {
+      if (dayVal == null) return 9999;
+      const s = String(dayVal).trim();
+      const m = s.match(/(\d+)/);
+      return m ? parseInt(m[1], 10) : 9999;
+    }
+
+    function compareTeamAndDay(a, b) {
+      const tA = String(a.team ?? "").trim();
+      const tB = String(b.team ?? "").trim();
+      const numA = parseFloat(tA);
+      const numB = parseFloat(tB);
+      if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
+        return numA - numB;
+      }
+      const teamCmp = tA.localeCompare(tB, undefined, { numeric: true, sensitivity: "base" });
+      if (teamCmp !== 0) return teamCmp;
+
+      const dA = parseDayNumber(a.day);
+      const dB = parseDayNumber(b.day);
+      if (dA !== dB) return dA - dB;
+      return String(a.day ?? "").localeCompare(String(b.day ?? ""), undefined, { numeric: true, sensitivity: "base" });
+    }
+
+    function cloneExcelCellStyle(srcCell, dstCell) {
+      if (srcCell.font) dstCell.font = JSON.parse(JSON.stringify(srcCell.font));
+      if (srcCell.alignment) dstCell.alignment = JSON.parse(JSON.stringify(srcCell.alignment));
+      if (srcCell.border) dstCell.border = JSON.parse(JSON.stringify(srcCell.border));
+      if (srcCell.fill) dstCell.fill = JSON.parse(JSON.stringify(srcCell.fill));
+      if (srcCell.numFmt) dstCell.numFmt = srcCell.numFmt;
+    }
+
+
+    // ---- Hamlets Data workbook hardening helpers (prevent Excel "found a problem with some content") ----
+    function xlSafeText(v) {
+      // Remove characters that are illegal in XML 1.0 (control chars, lone surrogates, U+FFFE/U+FFFF)
+      return String(v == null ? "" : v)
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, "")
+        .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/g, "")
+        .replace(/(^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/g, "$1")
+        .slice(0, 32000);
+    }
+
+    // Copies row height + every cell style (and blank value) from one row to another
+    function xlCopyRowStyle(ws, srcRowNum, dstRowNum, maxCol) {
+      const srcRow = ws.getRow(srcRowNum);
+      const dstRow = ws.getRow(dstRowNum);
+      if (srcRow.height) dstRow.height = srcRow.height;
+      for (let c = 1; c <= maxCol; c++) {
+        const sc = srcRow.getCell(c);
+        const dc = dstRow.getCell(c);
+        cloneExcelCellStyle(sc, dc);
+      }
+    }
+
+    // Builds the formatted Hamlets Data workbook (Master List template) from Hamlets Data Entry records.
+    // Shared by the Hamlets Data button and the Microplan workbook.
+    async function buildHamletsDataWorkbook(entries) {
+        // Sort Team # wise, then Day wise
+        const sorted = [...entries].sort(compareTeamAndDay);
+
+        const wb = new ExcelJS.Workbook();
+        await wb.xlsx.load(decodeBase64ToArrayBuffer(EMBEDDED_HAMLETS_DATA_TEMPLATE_B64));
+        const ws = wb.getWorksheet("Hamlets Data") || wb.worksheets[0];
+
+        // Remove any other sheets just in case
+        wb.worksheets.slice().forEach(sheet => {
+          if (sheet.id !== ws.id) wb.removeWorksheet(sheet.id);
+        });
+
+        // FIX 1: the template remembered "first visible tab = sheet #2" (firstSheet=1) but only ONE
+        // sheet exists now -> Excel reports "We found a problem with some content". Reset the view.
+        wb.views = [{
+          x: 0, y: 0, width: 19420, height: 10300,
+          firstSheet: 0, activeTab: 0, visibility: "visible"
+        }];
+        wb.calcProperties = { fullCalcOnLoad: false };
+
+        // Populate header metadata from first available values across entries
+        const firstNonEmpty = (key) => {
+          const found = sorted.find(r => r && r[key] != null && String(r[key]).trim() !== "");
+          return found ? xlSafeText(String(found[key]).trim()) : "";
+        };
+
+        const districtVal = firstNonEmpty("district");
+        const tehsilVal = firstNonEmpty("tehsil");
+        const ucVal = firstNonEmpty("uc");
+        const aicVal = firstNonEmpty("aic");
+        const dateStr = new Date().toISOString().slice(0, 10);                    // used in the file name
+        const sheetDate = getCampaignInfo().review || dateStr;                    // Review date from setup (else today)
+
+        // Header names are printed in Urdu (setup page values first, else the hamlets entries)
+        const hdCi = getCampaignInfo();
+        ws.getCell("C2").value = toUrdu(hdCi.district || districtVal);
+        ws.getCell("E2").value = ucNameUrdu(ucVal || hdCi.uc, hdCi);
+        ws.getCell("J2").value = sheetDate;
+        ws.getCell("C3").value = toUrdu(hdCi.tehsil || tehsilVal);
+        ws.getCell("J3").value = aicNameUrdu(aicVal, hdCi);
+
+        // Template layout (one printed page = 31 rows):
+        //   Page 1: header row 4, data rows 5..32 (28 rows per side), spacer row 33, signature row 34
+        //   Page 2: header row 35, data rows 36..63 (28 rows per side), spacer row 64, signature row 65
+        //   Page N: header row 35 + (N-2)*31 + ... (cloned from page 2)
+        // Left block = cols A-F, right block = cols H-M  ->  56 entries per page.
+        const ROWS_PER_SIDE = 28;
+        const ENTRIES_PER_PAGE = ROWS_PER_SIDE * 2; // 56
+        const BLOCK_ROWS = 31;
+        const totalPagesNeeded = Math.max(2, Math.ceil(sorted.length / ENTRIES_PER_PAGE));
+
+        // Clone page 2 (rows 35..65) for pages 3..N (styles + static text such as headers/signature line)
+        for (let p = 2; p < totalPagesNeeded; p++) {
+          const destStartRow = 35 + (p - 1) * BLOCK_ROWS;
+          for (let offset = 0; offset < BLOCK_ROWS; offset++) {
+            const srcRow = ws.getRow(35 + offset);
+            const dstRow = ws.getRow(destStartRow + offset);
+            if (srcRow.height) dstRow.height = srcRow.height;
+            for (let c = 1; c <= 13; c++) {
+              const srcCell = srcRow.getCell(c);
+              const dstCell = dstRow.getCell(c);
+              dstCell.value = srcCell.value;
+              cloneExcelCellStyle(srcCell, dstCell);
+            }
+          }
+        }
+
+        // Fill entries: Left block first (28 rows top-to-bottom), then Right block
+        // Left cols: A(1)=Sr.#, B(2)=Village, C(3)=Settlement, D(4)=#HH, E(5)=Team#, F(6)=Day
+        // Right cols: H(8)=Sr.#, I(9)=Village, J(10)=Settlement, K(11)=#HH, L(12)=Team#, M(13)=Day
+        sorted.forEach((item, idx) => {
+          const srNo = idx + 1;
+          const pageIdx = Math.floor(idx / ENTRIES_PER_PAGE);
+          const posInPage = idx % ENTRIES_PER_PAGE;
+          const isRightBlock = posInPage >= ROWS_PER_SIDE;
+          const rowOffset = posInPage % ROWS_PER_SIDE;
+
+          const dataStartRow = pageIdx === 0 ? 5 : (36 + (pageIdx - 1) * BLOCK_ROWS);
+          const targetRow = dataStartRow + rowOffset;
+          const baseCol = isRightBlock ? 8 : 1;
+
+          const hhRaw = item.hh;
+          const hhNum = (hhRaw !== "" && hhRaw != null && isFinite(Number(hhRaw))) ? Number(hhRaw) : xlSafeText(hhRaw);
+          const teamRaw = item.team;
+          const teamVal = (teamRaw !== "" && teamRaw != null && isFinite(Number(teamRaw))) ? Number(teamRaw) : xlSafeText(teamRaw);
+
+          ws.getCell(targetRow, baseCol).value = srNo;
+          ws.getCell(targetRow, baseCol + 1).value = xlSafeText(item.village);
+          ws.getCell(targetRow, baseCol + 2).value = xlSafeText(item.settlement);
+          ws.getCell(targetRow, baseCol + 3).value = hhNum;
+          ws.getCell(targetRow, baseCol + 4).value = teamVal;
+          ws.getCell(targetRow, baseCol + 5).value = xlSafeText(item.day);
+        });
+
+        // FIX 5: the template has mixed hard-coded row heights (19 / 26.5 / 18.5 / 33.65 ...) and a Day
+        // column only ~5.8 wide for 14pt bold text ("Day 2" gets clipped). Make every data row the same
+        // height, widen the narrow columns and shrink long names instead of letting rows grow/clip.
+        const UNIFORM_ROW_HEIGHT = 30;
+        const dataRowRanges = [[5, 5 + ROWS_PER_SIDE - 1]];
+        for (let p = 1; p < totalPagesNeeded; p++) {
+          const st = 36 + (p - 1) * BLOCK_ROWS;
+          dataRowRanges.push([st, st + ROWS_PER_SIDE - 1]);
+        }
+        dataRowRanges.forEach(([r0, r1]) => {
+          for (let r = r0; r <= r1; r++) {
+            const row = ws.getRow(r);
+            row.height = UNIFORM_ROW_HEIGHT;
+            for (let c = 1; c <= 13; c++) {
+              if (c === 7) continue; // spacer column between the two blocks
+              const cell = row.getCell(c);
+              cell.alignment = Object.assign({}, cell.alignment, {
+                vertical: "middle",
+                horizontal: "center",
+                wrapText: false,
+                shrinkToFit: true
+              });
+            }
+          }
+        });
+        // Sr.# | Village | Settlement | #HH | Team# | Day  (left: A-F, right: H-M)
+        [[1, 4.5], [4, 7], [5, 7], [6, 9.5], [8, 4.5], [11, 7], [12, 7], [13, 9.5]].forEach(([col, w]) => {
+          ws.getColumn(col).width = w;
+        });
+
+        // FIX 2: normalise the sheet view (template froze 13 columns + had a selection outside the pane)
+        ws.views = [{
+          state: "frozen", xSplit: 0, ySplit: 3, topLeftCell: "A4", activePane: "bottomLeft",
+          zoomScale: 87, zoomScaleNormal: 100,
+          showGridLines: true, activeCell: "A4"
+        }];
+
+        // FIX 3: clean page setup (drop 4294967295 DPI values & stray attributes) and print ALL pages
+        const lastPrintRow = 34 + (totalPagesNeeded - 1) * BLOCK_ROWS;
+        // FIX 6 (right side cut off when printing): the template's right margin was only 0.118" - smaller than the
+        // non-printable edge of most printers / "Print to PDF" drivers, so column M (Team # / Day) and the right
+        // border got clipped. Use equal, printer-safe margins on both sides instead.
+        const keepMargins = { left: 0.4, right: 0.4, top: 0.4, bottom: 0.3, header: 0, footer: 0 };
+        // Scale chosen so the full width (A:M) AND the tallest page (title rows 1-3 + 31 rows) fit one A4 portrait page
+        const rowsH = (a, b) => { let h = 0; for (let r = a; r <= b; r++) h += ws.getRow(r).height || 15; return h; };
+        let tallestPage = rowsH(1, 34);
+        for (let p = 1; p < totalPagesNeeded; p++) {
+          const st = 35 + (p - 1) * BLOCK_ROWS;
+          tallestPage = Math.max(tallestPage, rowsH(1, 3) + rowsH(st, st + BLOCK_ROWS - 1));
+        }
+        let widthPts = 0;
+        for (let c = 1; c <= 13; c++) widthPts += ((ws.getColumn(c).width || 8.43) * 7 + 5) * 0.75;
+        const usableW = 595.3 - (keepMargins.left + keepMargins.right) * 72;
+        const usableH = 841.9 - (keepMargins.top + keepMargins.bottom) * 72;
+        // 0.95 safety factor: Excel / printer drivers round column widths up a little, so never fill the page edge to edge
+        const fitScale = Math.max(10, Math.min(100, Math.floor(Math.min(usableW / widthPts, usableH / tallestPage) * 95)));
+        ws.pageSetup = {
+          paperSize: 9,
+          orientation: "portrait",
+          scale: fitScale,
+          fitToPage: false,
+          horizontalCentered: true,
+          margins: keepMargins,
+          printArea: "A1:M" + lastPrintRow,
+          printTitlesRow: "1:3"          // title rows (Master List / District / UC / Date / Tehsil / AIC) repeat on every page
+        };
+        // Page break after each signature row (34, 65, 96, ...); 16384 => valid max column index
+        for (let p = 0; p < totalPagesNeeded - 1; p++) {
+          ws.getRow(34 + p * BLOCK_ROWS).addPageBreak(0, 16384);
+        }
+
+        // FIX 4: write a clean core/app property set (no legacy lastPrinted etc.)
+        wb.creator = wb.creator || "Campaign Tally";
+        wb.lastModifiedBy = "Campaign Tally";
+        wb.created = new Date();
+        wb.modified = new Date();
+        wb.lastPrinted = undefined;
+      return { wb, ws, ucVal, dateStr };
+    }
+
+    async function exportHamletsDataWorkbook() {
+      let entries = [];
+      try {
+        const parsed = JSON.parse(localStorage.getItem(HAMLETS_ENTRIES_STORAGE_KEY) || "[]");
+        if (Array.isArray(parsed)) entries = parsed;
+      } catch (e) {
+        entries = [];
+      }
+
+      if (entries.length === 0) {
+        showToast("No saved entries in Hamlets Data Entry yet. Add hamlets first.");
+        return;
+      }
+      if (typeof ExcelJS === "undefined") {
+        showToast("ExcelJS library not loaded.");
+        return;
+      }
+
+      try {
+        const { wb, ucVal, dateStr } = await buildHamletsDataWorkbook(entries);
+        const outBuffer = await wb.xlsx.writeBuffer();
+        const safeUc = ucVal ? `_${ucVal.replace(/[^a-zA-Z0-9_-]+/g, "_")}` : "";
+        await saveFileNativeOrWeb(
+          new Uint8Array(outBuffer),
+          `Hamlets_Data${safeUc}_${dateStr}.xlsx`,
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+      } catch (err) {
+        console.error(err);
+        showToast("Error generating Hamlets Data Excel: " + (err.message || "Unknown error"));
+      }
     }
 
     async function exportAICSummaryWorkbook() {
@@ -4231,6 +4928,187 @@
       }
     }
 
+    /* ========================================================================
+       UCMO SUMMARY SHEET (Union Council-wise, exact UCMO Summary template)
+       ======================================================================== */
+    const EMBEDDED_UCMO_TEMPLATE_B64 = "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";
+
+    // Standard supply quantities of ONE Area In-Charge kit, exactly as printed in the AIC Summary template
+    // (pen 6, zip-lock bags 18, markers 12, chalk boxes 12, tally sheets 6). A UC needs one kit per AIC.
+    const UCMO_SUPPLIES_PER_AIC = { pen: 6, ziplock: 18, markers: 12, chalk: 12, tally: 6 };
+
+    // Groups saved team records by Union Council (UC). Every figure is the SUM of that UC's Area In-Charge
+    // figures (same calculations as the AIC Summary Sheet), so a UC always equals the total of its AIC sheets.
+    function groupRecordsByUC(recordsList) {
+      const chrono = [...recordsList].reverse();           // entry order
+      const byUC = new Map();
+      chrono.forEach(r => {
+        const ucName = String(r["UC"] || "").trim() || "Unassigned UC";
+        if (!byUC.has(ucName)) byUC.set(ucName, []);
+        byUC.get(ucName).push(r);
+      });
+
+      return Array.from(byUC.entries()).map(([ucName, list]) => {
+        // groupRecordsByAIC reverses its input itself, so hand it newest-first again
+        const aicGroups = groupRecordsByAIC([...list].reverse());
+        const g = {
+          uc: ucName, district: "", tehsil: "", ucmo: "",
+          aicCount: aicGroups.filter(a => a.aic !== "Unassigned AIC").length,
+          mtCount: 0, ftCount: 0, ttCount: 0,
+          hhTarget: 0, hhRec: 0, mmpTarget: 0,
+          ftCov: 0, ttCov: 0, schoolsCov: 0,
+          totalChildrenCov: 0, totalChildrenTar: 0, houseChildrenCov: 0, houseChildrenTar: 0, mtTarget: 0,
+          naTotal: 0, zeroDose: 0
+        };
+        aicGroups.forEach(a => {
+          if (!g.district && a.district) g.district = String(a.district).trim();
+          if (!g.tehsil && a.tehsil) g.tehsil = String(a.tehsil).trim();
+          if (!g.ucmo && a.ucmo) g.ucmo = String(a.ucmo).trim();
+          g.mtCount += a.mtCount; g.ftCount += a.ftCount; g.ttCount += a.ttCount;
+          g.hhTarget += a.hhTarget; g.hhRec += a.hhRec; g.mmpTarget += a.mmpTarget;
+          g.ftCov += a.ftCov; g.ttCov += a.ttCov; g.schoolsCov += a.schoolsCov;
+          g.naTotal += a.naTotal; g.zeroDose += a.zeroDose;
+          // same formulas as fillAICSummaryBlock, summed AIC by AIC
+          g.houseChildrenCov += Math.max(0, a.mtCov - a.schoolsCov);
+          g.houseChildrenTar += Math.max(0, a.mtTarget - a.schoolsCov);
+          g.mtTarget += a.mtTarget;
+          g.totalChildrenCov += a.mtCov + a.ftCov + a.ttCov;
+          g.totalChildrenTar += a.mtTarget + a.ftCov + a.ttCov;
+        });
+        return g;
+      });
+    }
+
+    // Fills one 24-row UCMO block that starts at startRow. The UCMO template is the AIC template shifted
+    // down by one row (extra "AIC counts" row), so every AIC cell maps to the same column, row + 1.
+    function fillUCMOSummaryBlock(ws, startRow, g, dateStr) {
+      const r = (offset) => startRow + offset - 1;
+      const totalTeams = g.mtCount + g.ftCount + g.ttCount;
+      const kits = Math.max(1, g.aicCount);
+
+      // Header & admin info
+      writeReviewCell(ws, `A${r(1)}`, dateStr);                                 // Review date
+      writeCampaignCell(ws, `O${r(4)}`, `O${r(4)}:S${r(4)}`);                   // Campaign name + dates (next to "مہم کا نام")
+      const ci = getCampaignInfo();
+      const ucName = ucNameUrdu((g.uc === "Unassigned UC" && ci.uc) ? ci.uc : g.uc, ci);
+      const tehsil = toUrdu(ci.tehsil || g.tehsil), district = toUrdu(ci.district || g.district), ucmo = ci.ucmo ? (ci.ucmoUrdu || ci.ucmo) : g.ucmo;
+      ws.getCell(`A${r(4)}`).value = ucName;                                    // Union Council
+      if (tehsil)   ws.getCell(`E${r(4)}`).value = `تحصیل/تعلقہ/ٹاؤن:${tehsil}`;
+      if (district) ws.getCell(`K${r(4)}`).value = `ضلع / ایجنسی:${district}`;
+      if (ucmo)     ws.getCell(`O${r(5)}`).value = ucmo;                    // UC in-charge name
+      if (g.aicCount) ws.getCell(`R${r(6)}`).value = g.aicCount;                // Total Area In-charges
+
+      // Row 8: previous campaign - recorded / covered children & HH
+      ws.getCell(`A${r(8)}`).value = g.totalChildrenCov;                        // Total children
+      ws.getCell(`C${r(8)}`).value = g.ftCov;                                   // Fixed site
+      ws.getCell(`G${r(8)}`).value = g.ttCov;                                   // Transit point
+      ws.getCell(`L${r(8)}`).value = g.schoolsCov;                              // Schools / madaris
+      ws.getCell(`P${r(8)}`).value = g.mtTarget;                        // Household children
+      ws.getCell(`R${r(8)}`).value = g.hhTarget;                                   // Total HH
+
+      // Row 10: current campaign planning - target / planned children & HH
+      ws.getCell(`A${r(10)}`).value = g.totalChildrenTar;
+      ws.getCell(`C${r(10)}`).value = g.ftCov;
+      ws.getCell(`G${r(10)}`).value = g.ttCov;
+      ws.getCell(`L${r(10)}`).value = g.schoolsCov;
+      ws.getCell(`P${r(10)}`).value = g.mtTarget;
+      ws.getCell(`R${r(10)}`).value = g.hhRec;
+
+      // Row 11: team counts
+      ws.getCell(`I${r(11)}`).value = g.ttCount;                                // Transit
+      ws.getCell(`L${r(11)}`).value = g.ftCount;                                // Fixed
+      ws.getCell(`P${r(11)}`).value = g.mtCount;                                // Mobile
+      ws.getCell(`R${r(11)}`).value = totalTeams;                               // Total teams
+
+      // Row 12: supplies (AIC kit x number of AICs) + total vaccine doses
+      ws.getCell(`G${r(12)}`).value = UCMO_SUPPLIES_PER_AIC.pen * kits;
+      ws.getCell(`I${r(12)}`).value = UCMO_SUPPLIES_PER_AIC.ziplock * kits;
+      ws.getCell(`L${r(12)}`).value = UCMO_SUPPLIES_PER_AIC.markers * kits;
+      ws.getCell(`N${r(12)}`).value = UCMO_SUPPLIES_PER_AIC.chalk * kits;
+      ws.getCell(`P${r(12)}`).value = UCMO_SUPPLIES_PER_AIC.tally * kits;
+      // Total vaccine doses = planned children (A10) x 1.11  (formula kept from your template)
+      ws.getCell(`R${r(12)}`).value = { formula: `SUM(A${r(10)}*1.11)`, result: g.totalChildrenTar * 1.11 };
+
+      // Rows 16, 19, 20: missed (NA) children, zero-dose children, migrant & mobile population
+      ws.getCell(`A${r(16)}`).value = g.naTotal;
+      ws.getCell(`A${r(19)}`).value = g.zeroDose;
+      ws.getCell(`R${r(20)}`).value = g.mmpTarget;
+    }
+
+    // Builds the UCMO Summary workbook (exact template, one block per Union Council)
+    async function buildUCMOSummaryWorkbook(recordsList) {
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(decodeBase64ToArrayBuffer(EMBEDDED_UCMO_TEMPLATE_B64));
+      const ws = wb.getWorksheet("UCMO Sheet") || wb.worksheets[0];
+      ws.name = "UCMO Summary";
+
+      const groups = groupRecordsByUC(recordsList);
+      const BLOCK_ROWS = 24;
+      const BLOCK_STRIDE = 26;
+      const d = new Date();
+      const todayStr = `${String(d.getDate()).padStart(2, "0")} ${CC_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+      const dateStr = getCampaignInfo().review || todayStr;   // Review date entered on the home page (else today)
+
+      // Clone every extra block first (from the untouched template rows), then fill them all
+      groups.forEach((g, idx) => {
+        if (idx > 0) cloneAICSummaryBlock(ws, 1 + idx * BLOCK_STRIDE);
+      });
+      groups.forEach((g, idx) => fillUCMOSummaryBlock(ws, 1 + idx * BLOCK_STRIDE, g, dateStr));
+
+      // Clean view + print setup (one UC per printed page)
+      const lastRow = (groups.length - 1) * BLOCK_STRIDE + BLOCK_ROWS;
+      const keepMargins = (ws.pageSetup && ws.pageSetup.margins) || {
+        left: 0.8, right: 0.16, top: 0.99, bottom: 0.16, header: 0.31, footer: 0.31
+      };
+      // Fit-to-page (1 page wide, as many tall as needed) instead of a fixed 10% scale: Excel recomputes the
+      // scale itself, so it never draws a grid of stray page-break lines across the form. Manual row
+      // breaks below still put each Union Council on its own page.
+      ws.pageSetup = {
+        paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+        horizontalCentered: true, margins: keepMargins, printArea: "A1:T" + lastRow
+      };
+      ws.rowBreaks = [];
+      for (let k = 0; k < groups.length - 1; k++) {
+        ws.getRow(1 + k * BLOCK_STRIDE + BLOCK_STRIDE - 1).addPageBreak(0, 16384);
+      }
+      // Normal view (page-break preview shows extra guide lines on this very wide form)
+      ws.views = [{
+        state: "normal", zoomScale: 10, zoomScaleNormal: 10,
+        showGridLines: false, activeCell: "A1"
+      }];
+
+      wb.views = [{ x: 0, y: 0, width: 19420, height: 10300, firstSheet: 0, activeTab: 0, visibility: "visible" }];
+      wb.creator = "Campaign Tally";
+      wb.lastModifiedBy = "Campaign Tally";
+      wb.created = new Date();
+      wb.modified = new Date();
+      return wb;
+    }
+
+    async function exportUCMOSummaryWorkbook() {
+      if (savedRecords.length === 0) {
+        showToast("No saved team records yet. Add teams in Tally Sheet Analysis first.");
+        return;
+      }
+      if (typeof ExcelJS === "undefined") {
+        showToast("ExcelJS library not loaded.");
+        return;
+      }
+      try {
+        const wb = await buildUCMOSummaryWorkbook(savedRecords);
+        const outBuffer = await wb.xlsx.writeBuffer();
+        const dateStr = new Date().toISOString().slice(0, 10);
+        await saveFileNativeOrWeb(
+          new Uint8Array(outBuffer),
+          `UCMO_Summary_${dateStr}.xlsx`,
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+      } catch (err) {
+        console.error(err);
+        showToast("Error generating UCMO Summary Sheet: " + (err.message || "Unknown error"));
+      }
+    }
+
     // Backward-compatible alias
     async function exportOperationalSheetXLSX() {
       return exportExcelWorkbook();
@@ -4250,7 +5128,11 @@
       frame.dataset.loaded = "1";   // loaded once; data entry state is kept when switching screens
     }
 
+    initCampaignInfo();
+
     function showScreen(name) {
+      const setupEl = document.getElementById("setupScreen");
+      if (setupEl) setupEl.classList.toggle("screen-hidden", name !== "setup");
       document.getElementById("homeScreen").classList.toggle("screen-hidden", name !== "home");
       document.getElementById("tallyApp").classList.toggle("screen-hidden", name !== "tally");
       document.getElementById("hamletsApp").classList.toggle("screen-hidden", name !== "hamlets");
