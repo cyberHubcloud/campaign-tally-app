@@ -2080,7 +2080,6 @@
       <button type="button" class="btn btn-ghost" onclick="confirmResetForm()" title="Clear current form">Reset</button>
       <button type="button" class="btn btn-secondary" onclick="saveRecord(false)">Save</button>
       <button type="button" class="btn btn-primary" onclick="saveRecord(true)">Save + Next</button>
-      <button type="button" class="btn btn-primary" style="background: #0284c7;" onclick="addToOperationalSheet()">+ Op Sheet</button>
     </div>
   </footer>
   </div><!-- /tallyApp -->
@@ -2539,7 +2538,16 @@
 
         // Check 1: Covered Day + NA Day must equal Target Day
         if (anyEntered && (c + na) !== t) {
-          msgs.push(`Covered (${c}) + NA (${na}) = ${c + na}, must equal Target Day ${d} (${t})`);
+          // Tell the user the gap and the exact value to type: diff > 0 = short, diff < 0 = over
+          const diff = t - (c + na);
+          const fixCov = c + diff;   // Covered value that balances the total (NA unchanged)
+          const fixNa = na + diff;   // NA value that balances the total (Covered unchanged)
+          const options = [];
+          if (fixCov >= 0) options.push(`Covered to ${fixCov}`);
+          if (fixNa >= 0) options.push(`NA to ${fixNa}`);
+          const gapTxt = diff > 0 ? `short by ${diff}` : `over by ${Math.abs(diff)}`;
+          msgs.push(`Covered (${c}) + NA (${na}) = ${c + na}, must equal Target Day ${d} (${t}) \u2192 ${gapTxt}` +
+            (options.length ? `: set ${options.join(" or ")}` : ""));
           covWarn = true;
           naWarn = true;
         }
