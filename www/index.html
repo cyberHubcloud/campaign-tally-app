@@ -413,6 +413,9 @@
       box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
     }
 
+    .field-input.from-setup { background: #f1f5f9; color: #334155; cursor: not-allowed; font-weight: 600; }
+    .setup-hint { font-size: 0.8rem; color: #475569; margin: 0 0 10px; }
+    .setup-hint button { background: none; border: 0; color: #0f766e; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 0; font-size: inherit; }
     .field-input:disabled {
       background-color: #f1f5f9;
       color: #94a3b8;
@@ -636,7 +639,8 @@
 
     .live-breakdown-table {
       width: 100%;
-      min-width: 540px;
+      min-width: 470px;          /* only very narrow phones fall back to side-scroll */
+      table-layout: fixed;       /* columns share the width using the <colgroup> below */
       border-collapse: collapse;
       font-size: 0.78rem;
       font-variant-numeric: tabular-nums;
@@ -648,16 +652,19 @@
       font-weight: 700;
       text-transform: uppercase;
       font-size: 0.66rem;
-      letter-spacing: 0.03em;
-      padding: 8px 6px;
+      letter-spacing: 0.02em;
+      line-height: 1.25;
+      padding: 8px 3px;
       text-align: center;
+      vertical-align: bottom;
       border-bottom: 1px solid #cbd5e1;
-      white-space: nowrap;
+      white-space: normal;
+      overflow-wrap: break-word;
     }
 
     .live-breakdown-table th:first-child {
       text-align: left;
-      padding-left: 10px;
+      padding-left: 8px;
       position: sticky;
       left: 0;
       background: #f1f5f9;
@@ -665,7 +672,7 @@
     }
 
     .live-breakdown-table td {
-      padding: 8px 6px;
+      padding: 7px 3px;
       text-align: center;
       border-bottom: 1px solid #f1f5f9;
       color: var(--text-main);
@@ -675,7 +682,9 @@
 
     .live-breakdown-table td:first-child {
       text-align: left;
-      padding-left: 10px;
+      padding-left: 8px;
+      white-space: normal;
+      line-height: 1.2;
       font-weight: 700;
       color: var(--primary-dark);
       position: sticky;
@@ -708,6 +717,58 @@
       background: #eff6ff;
       color: #1d4ed8;
     }
+
+
+    /* ---- Live Team Summary: full grid, outer frame, grouped "NA Coverage" ---- */
+    .table-scroll-wrap { border: 1.5px solid #94a3b8; }              /* complete outer frame */
+
+    .live-breakdown-table th,
+    .live-breakdown-table td { border-right: 1px solid #cbd5e1; }    /* vertical grid */
+    .live-breakdown-table th:last-child,
+    .live-breakdown-table td:last-child { border-right: none; }
+    .live-breakdown-table tbody td { border-bottom: 1px solid #cbd5e1; }  /* horizontal grid */
+
+    /* thick line under the whole header block */
+    .live-breakdown-table thead tr:last-child th,
+    .live-breakdown-table thead th[rowspan] { border-bottom: 3px solid #475569; }
+
+    /* NA Coverage group: closed box (Same Day + CUP Day) */
+    .live-breakdown-table th.grp-head {
+      background: #e0f2f1;
+      color: var(--primary-dark);
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid #94a3b8;
+    }
+    .live-breakdown-table .grp-start { border-left: 1.5px solid #94a3b8; }
+    .live-breakdown-table .grp-end   { border-right: 1.5px solid #94a3b8; }
+    .live-breakdown-table th.grp-head { border-left: 1.5px solid #94a3b8; border-right: 1.5px solid #94a3b8; }
+    .live-breakdown-table th.grp-start { border-left: 1.5px solid #94a3b8; }
+    .live-breakdown-table th.grp-end   { border-right: 1.5px solid #94a3b8; }  /* beats th:last-child */
+
+    /* coloured rows keep their tinted lines, group edges stay dark */
+    .live-breakdown-table tr.total-row td   { border-right-color: #5eead4; }
+    .live-breakdown-table tr.catchup-row td { border-right-color: #bfdbfe; border-top: 1px solid #bfdbfe; }
+    .live-breakdown-table tr.total-row td.grp-start,
+    .live-breakdown-table tr.catchup-row td.grp-start { border-left: 1.5px solid #94a3b8; }
+    .live-breakdown-table tr.total-row td.grp-end,
+    .live-breakdown-table tr.catchup-row td.grp-end   { border-right: 1.5px solid #94a3b8; }
+
+    /* ---- Import block ---- */
+    .import-block {
+      margin: 4px 0 12px;
+      padding-top: 12px;
+      border-top: 1px dashed #cbd5e1;
+    }
+    .import-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .import-btn { border-style: dashed; }
+    .import-note { font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; line-height: 1.35; }
 
     .warning-banner {
       margin-top: 10px;
@@ -1161,6 +1222,7 @@
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head>
 <body>
 
@@ -1300,6 +1362,10 @@
         <span class="home-btn-title">6. Microplan</span>
         <span class="home-btn-desc">Download one Excel file: UCMO Summary, Mobile Team, Fixed_Transit Team, Operational sheet, Hamlets Data Sheet, AIC Summary &amp; Hamlets Data</span>
       </button>
+      <button type="button" class="home-btn" onclick="exportAICWiseMicroplan()">
+        <span class="home-btn-title">7. AIC Wise MP</span>
+        <span class="home-btn-desc">Download one ZIP with a separate Microplan workbook for every Area In-Charge (all sheets, only that AIC's teams &amp; hamlets)</span>
+      </button>
       <div class="saved-path-banner" id="savedPathBannerHome">
         <div style="min-width: 0; word-break: break-word;">
           <strong style="color: var(--success);">&#10003; Saved to Phone Memory:</strong><br />
@@ -1422,6 +1488,7 @@
             <h2 class="card-title">Administrative Hierarchy</h2>
             <span class="col-badge">Cols 1–5</span>
           </div>
+          <p class="setup-hint">District, Tehsil, UC &amp; UCMO are taken from Campaign Setup. <button type="button" onclick="editCampaignSetup()">Change in Campaign Setup</button></p>
           <div class="form-grid cols-2">
             <div class="field-group">
               <label class="field-label" for="f_District">1. District <span class="req">*</span></label>
@@ -1877,16 +1944,31 @@
 
           <div class="table-scroll-wrap">
             <table class="live-breakdown-table">
+              <colgroup>
+                <col style="width:14%" />  <!-- Period -->
+                <col style="width:9%" />   <!-- Target -->
+                <col style="width:15%" />  <!-- Covered (%) -->
+                <col style="width:7%" />   <!-- NA -->
+                <col style="width:11%" />  <!-- Same Day NA Cov -->
+                <col style="width:11%" />  <!-- Catch-Up Day NA Cov -->
+                <col style="width:11%" />  <!-- SMC (Remaining) -->
+                <col style="width:11%" />  <!-- Schools Cov -->
+                <col style="width:11%" />  <!-- Zero Dose -->
+              </colgroup>
               <thead>
                 <tr>
-                  <th>Period</th>
-                  <th>Target</th>
-                  <th>Covered (%)</th>
-                  <th>NA</th>
-                  <th>Same Day NA Cov</th>
-                  <th>SMC (Remaining)</th>
-                  <th>Schools Cov</th>
-                  <th>Zero Dose</th>
+                  <th rowspan="2">Period</th>
+                  <th rowspan="2">Target</th>
+                  <th rowspan="2">Covered (%)</th>
+                  <th rowspan="2">NA</th>
+                  <th colspan="2" class="grp-head">NA Coverage</th>
+                  <th rowspan="2">SMC</th>
+                  <th rowspan="2">Schools Cov</th>
+                  <th rowspan="2">Zero Dose</th>
+                </tr>
+                <tr>
+                  <th class="grp-start">Same Day</th>
+                  <th class="grp-end">CUP Day</th>
                 </tr>
               </thead>
               <tbody>
@@ -1895,7 +1977,8 @@
                   <td id="live_d1_target">0</td>
                   <td id="live_d1_cov">0 (0%)</td>
                   <td id="live_d1_na">0</td>
-                  <td id="live_d1_sdna">0</td>
+                  <td class="grp-start" id="live_d1_sdna">0</td>
+                  <td class="grp-end" id="live_d1_cuna">0</td>
                   <td id="live_d1_smc">0</td>
                   <td id="live_d1_sch">0</td>
                   <td id="live_d1_zd">0</td>
@@ -1905,7 +1988,8 @@
                   <td id="live_d2_target">0</td>
                   <td id="live_d2_cov">0 (0%)</td>
                   <td id="live_d2_na">0</td>
-                  <td id="live_d2_sdna">0</td>
+                  <td class="grp-start" id="live_d2_sdna">0</td>
+                  <td class="grp-end" id="live_d2_cuna">0</td>
                   <td id="live_d2_smc">0</td>
                   <td id="live_d2_sch">0</td>
                   <td id="live_d2_zd">0</td>
@@ -1915,7 +1999,8 @@
                   <td id="live_d3_target">0</td>
                   <td id="live_d3_cov">0 (0%)</td>
                   <td id="live_d3_na">0</td>
-                  <td id="live_d3_sdna">0</td>
+                  <td class="grp-start" id="live_d3_sdna">0</td>
+                  <td class="grp-end" id="live_d3_cuna">0</td>
                   <td id="live_d3_smc">0</td>
                   <td id="live_d3_sch">0</td>
                   <td id="live_d3_zd">0</td>
@@ -1925,17 +2010,19 @@
                   <td id="live_tot_target">0</td>
                   <td id="live_tot_cov">0 (0%)</td>
                   <td id="live_tot_na">0</td>
-                  <td id="live_tot_sdna">0</td>
+                  <td class="grp-start" id="live_tot_sdna">0</td>
+                  <td class="grp-end" id="live_tot_cuna">0</td>
                   <td id="live_tot_smc">0</td>
                   <td id="live_tot_sch">0</td>
                   <td id="live_tot_zd">0</td>
                 </tr>
                 <tr class="catchup-row">
-                  <td>Catch-Up Day</td>
+                  <td>CUP Day</td>
                   <td id="live_cu_target">0</td>
                   <td id="live_cu_cov">0 (0%)</td>
                   <td>&mdash;</td>
-                  <td>&mdash;</td>
+                  <td class="grp-start">&mdash;</td>
+                  <td class="grp-end">&mdash;</td>
                   <td id="live_cu_smc">0</td>
                   <td>&mdash;</td>
                   <td>&mdash;</td>
@@ -2052,6 +2139,21 @@
               &#128202; Download Excel File (.xlsx)
             </button>
           </div>
+
+          <div class="import-block">
+            <div class="import-title">Import into Campaign Tally Sheet</div>
+            <input type="file" id="importFileInput" accept=".csv,.tsv,.txt,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none;" onchange="handleImportFile(this)" />
+            <button type="button" class="btn btn-secondary btn-full import-btn" onclick="document.getElementById('importFileInput').click()">
+              &#128194; Import CSV / Excel (.xlsx)
+            </button>
+            <label style="display:flex; gap:8px; align-items:flex-start; font-size:0.8rem; margin:8px 0 4px;">
+              <input type="checkbox" id="importReplaceAll" style="margin-top:3px;" />
+              <span><strong>Replace all saved teams</strong> with this file (deletes every existing team first, so nothing old is left over).</span>
+            </label>
+            <div class="import-note">
+              Use a file exported from this app (47 headers). New teams are added; a team with the same District / Tehsil / UC / Team # / Type is updated.
+            </div>
+          </div>
           <div style="font-size: 0.75rem; color: var(--text-muted);">
             <strong>Phone Memory:</strong> CSV &amp; PDF files save directly to <code>Documents/CampaignTally/</code> (or Downloads folder in browser).
           </div>
@@ -2068,7 +2170,10 @@
         <div class="card">
           <div class="card-header">
             <h2 class="card-title">Saved Team Entries</h2>
-            <button type="button" class="btn btn-danger btn-sm" id="btnClearAll" onclick="confirmClearAll()">Clear All</button>
+            <div style="display:flex; gap:6px;">
+              <button type="button" class="btn btn-danger btn-sm" id="btnClearAll" onclick="confirmClearAll()">Clear All</button>
+              <button type="button" class="btn btn-danger btn-sm" id="btnFullReset" onclick="confirmFullReset()" title="Wipes teams, Hamlets data, draft and campaign setup">Full Reset</button>
+            </div>
           </div>
           <div class="field-group" style="margin-bottom: 12px;">
             <input type="search" id="recordSearchInput" class="field-input" placeholder="Search by Team #, UC, Area In-Charge, or District..." oninput="renderRecordsList()" />
@@ -2282,6 +2387,7 @@
       setMMPStatus(document.getElementById("f_MMP_YN").value || "N");
       runLiveCalculationsAndValidations();
       updateRecordsUI();
+      if (typeof applySetupToTallyForm === "function") applySetupToTallyForm(false);
     });
 
     /**
@@ -2518,6 +2624,7 @@
       let anyCovWarn = false;
       let totSmc = 0;
       let totSdNa = 0;
+      let totCuNa = 0;
       let totSch = 0;
 
       [1, 2, 3].forEach(d => {
@@ -2532,6 +2639,7 @@
         const smc = Math.max(0, na - (sdNa + cuNa));
         totSmc += smc;
         totSdNa += sdNa;
+        totCuNa += cuNa;
         totSch += sch;
 
         const anyEntered = hasVal(`f_Target_D${d}`) || hasVal(`f_Covered_D${d}`) || hasVal(`f_NA_D${d}`);
@@ -2606,6 +2714,7 @@
         document.getElementById(`live_d${d}_cov`).textContent = `${c.toLocaleString()} (${dayPct}%)`;
         document.getElementById(`live_d${d}_na`).textContent = na.toLocaleString();
         document.getElementById(`live_d${d}_sdna`).textContent = sdNa.toLocaleString();
+        document.getElementById(`live_d${d}_cuna`).textContent = cuNa.toLocaleString();
         document.getElementById(`live_d${d}_smc`).textContent = smc.toLocaleString();
         document.getElementById(`live_d${d}_sch`).textContent = sch.toLocaleString();
         document.getElementById(`live_d${d}_zd`).textContent = zd.toLocaleString();
@@ -2650,6 +2759,7 @@
       document.getElementById("live_tot_cov").textContent = `${totCov.toLocaleString()} (${covPct}%)`;
       document.getElementById("live_tot_na").textContent = totNA.toLocaleString();
       document.getElementById("live_tot_sdna").textContent = totSdNa.toLocaleString();
+      document.getElementById("live_tot_cuna").textContent = totCuNa.toLocaleString();
       document.getElementById("live_tot_smc").textContent = totSmc.toLocaleString();
       document.getElementById("live_tot_sch").textContent = totSch.toLocaleString();
       document.getElementById("live_tot_zd").textContent = totZD.toLocaleString();
@@ -2723,6 +2833,7 @@
     }
 
     function saveRecord(prepareNextTeam) {
+      applySetupToTallyForm(false);
       const district = document.getElementById("f_District").value.trim();
       const tehsil = document.getElementById("f_Tehsil").value.trim();
       const uc = document.getElementById("f_UC").value.trim();
@@ -2739,28 +2850,87 @@
       }
 
       const record = collectFormRecord();
+      const sig = recordSignature(record);
 
+      // Case 1: this form is already linked to a saved record (opened for edit, or saved once already)
       if (editingRecordId) {
         const idx = savedRecords.findIndex(r => r._id === editingRecordId);
         if (idx !== -1) {
-          savedRecords[idx] = record;
-        } else {
-          savedRecords.unshift(record);
+          if (recordSignature(savedRecords[idx]) === sig) {
+            showToast("No changes to save - already saved.");
+          } else {
+            savedRecords[idx] = record;
+            persistRecords();
+            updateRecordsUI();
+            showToast(`Updated ${record["Team #"]} successfully!`);
+          }
+          finishSave(record, prepareNextTeam);
+          return;
         }
-        showToast(`Updated ${record["Team #"]} successfully!`);
-        exitEditModeState();
-      } else {
-        savedRecords.unshift(record);
-        showToast(`Saved ${record["Team #"]} (${savedRecords.length} total)`);
+        editingRecordId = null; // linked record no longer exists (e.g. deleted)
+        record._id = "rec_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
       }
 
+      // Case 2: not linked, but the same team (District/Tehsil/UC/Team #/Type) is already saved
+      const dup = savedRecords.find(r =>
+        (r["District"] || "") === record["District"] &&
+        (r["Tehsil"] || "") === record["Tehsil"] &&
+        (r["UC"] || "") === record["UC"] &&
+        String(r["Team #"] || "") === String(record["Team #"]) &&
+        (r["Team Type"] || "MT") === record["Team Type"]
+      );
+      if (dup) {
+        if (recordSignature(dup) === sig) {
+          showToast("This team is already saved with the same data - no duplicate added.");
+          editingRecordId = dup._id;
+          finishSave(record, prepareNextTeam);
+          return;
+        }
+        openModal(
+          "Team Already Saved",
+          `Team "${record["Team #"]}" (UC: ${record["UC"]}) already exists. Update the existing entry with the new data? (No duplicate will be created.)`,
+          () => {
+            record._id = dup._id;
+            const i = savedRecords.findIndex(r => r._id === dup._id);
+            savedRecords[i] = record;
+            editingRecordId = dup._id;
+            persistRecords();
+            updateRecordsUI();
+            showToast(`Updated ${record["Team #"]} successfully!`);
+            finishSave(record, prepareNextTeam);
+          }
+        );
+        return;
+      }
+
+      // Case 3: genuinely new entry
+      savedRecords.unshift(record);
+      editingRecordId = record._id; // link the form so the next Save updates this entry instead of adding another
       persistRecords();
       updateRecordsUI();
+      showToast(`Saved ${record["Team #"]} (${savedRecords.length} total)`);
+      finishSave(record, prepareNextTeam);
+    }
 
+    // Compare only real data (ignore internal _id / _updatedAt)
+    function recordSignature(r) {
+      const o = {};
+      Object.keys(r).filter(k => k.charAt(0) !== "_").sort().forEach(k => {
+        o[k] = (r[k] === undefined || r[k] === null) ? "" : String(r[k]);
+      });
+      return JSON.stringify(o);
+    }
+
+    function finishSave(record, prepareNextTeam) {
       if (prepareNextTeam) {
+        exitEditModeState();
         resetFormForNextTeam(record);
         switchMainTab("admin");
         document.getElementById("f_Team_No").focus();
+      } else {
+        // stay on the saved entry (edit mode) so repeated Save presses never create copies
+        document.getElementById("editingTeamLabel").textContent = `${record["Team #"]} (UC: ${record["UC"]})`;
+        document.getElementById("editModeBanner").classList.add("visible");
       }
     }
 
@@ -2882,6 +3052,7 @@
     }
 
     function persistRecords() {
+      applySetupToTallyForm(false);
       localStorage.setItem(STORAGE_KEY_RECORDS, JSON.stringify(savedRecords));
     }
 
@@ -2944,6 +3115,27 @@
           persistRecords();
           updateRecordsUI();
           showToast("All records cleared");
+        }
+      );
+    }
+
+    // Wipes EVERYTHING this app stores on the device (tally teams, draft, Hamlets entries/routes/prefs, campaign setup),
+    // then reloads so no in-memory state (including the embedded Hamlets iframe) can write old data back.
+    const ALL_APP_STORAGE_KEYS = [
+      STORAGE_KEY_RECORDS, STORAGE_KEY_DRAFT,
+      "field_microplan_entries_v1", "field_microplan_day_routes_v2", "field_microplan_header_prefs_v1",
+      "campaign_info_v1"
+    ];
+    function confirmFullReset() {
+      openModal(
+        "Full Reset - Start New Campaign?",
+        "This permanently deletes ALL saved team entries, the Hamlets Data Entry rows and routes, the unsaved draft and the Campaign Setup (name, year, dates). Download your Excel file first! The app will reload.",
+        () => {
+          ALL_APP_STORAGE_KEYS.forEach(k => { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } });
+          try { sessionStorage.clear(); } catch (e) { /* ignore */ }
+          savedRecords = [];
+          editingRecordId = null;
+          location.reload();
         }
       );
     }
@@ -3628,6 +3820,201 @@
       document.body.removeChild(ta);
     }
 
+
+    /* ========================================================================
+       IMPORT: CSV / TSV / XLSX  ->  savedRecords  (same 47-header format as export)
+       ======================================================================== */
+    function normHeaderKey(h) {
+      return String(h === undefined || h === null ? "" : h).replace(/^\uFEFF/, "").replace(/\s+/g, " ").trim().toLowerCase();
+    }
+    const IMPORT_HEADER_LOOKUP = (() => {
+      const m = {};
+      EXACT_HEADERS.forEach(h => { m[normHeaderKey(h)] = h; });
+      return m;
+    })();
+
+    // RFC-4180 style parser: quoted cells, escaped quotes, CR/LF/CRLF, comma or tab delimiter
+    function parseDelimitedText(text) {
+      text = String(text || "").replace(/^\uFEFF/, "");
+      const firstLine = text.split(/\r\n|\n|\r/)[0] || "";
+      const delim = (firstLine.split("\t").length > firstLine.split(",").length) ? "\t" : ",";
+      const rows = [];
+      let row = [], cell = "", inQ = false;
+      for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (inQ) {
+          if (c === '"') {
+            if (text[i + 1] === '"') { cell += '"'; i++; } else { inQ = false; }
+          } else { cell += c; }
+        } else if (c === '"') {
+          inQ = true;
+        } else if (c === delim) {
+          row.push(cell); cell = "";
+        } else if (c === "\n" || c === "\r") {
+          if (c === "\r" && text[i + 1] === "\n") i++;
+          row.push(cell); cell = "";
+          rows.push(row); row = [];
+        } else {
+          cell += c;
+        }
+      }
+      if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
+      return rows.filter(r => r.some(v => String(v).trim() !== ""));
+    }
+
+    function excelCellToValue(v) {
+      if (v === null || v === undefined) return "";
+      if (typeof v === "object") {
+        if (v instanceof Date) return v.toISOString().slice(0, 10);
+        if (v.richText) return v.richText.map(t => t.text).join("");
+        if (v.result !== undefined && v.result !== null) return excelCellToValue(v.result);
+        if (v.text !== undefined) return String(v.text);
+        return "";
+      }
+      return v;
+    }
+
+    // Turn a grid of rows (first matching header row + data rows) into raw {header: value} objects
+    function gridToRawRows(grid) {
+      let hdrIdx = -1, colMap = [];
+      for (let i = 0; i < Math.min(grid.length, 8); i++) {
+        const map = grid[i].map(c => IMPORT_HEADER_LOOKUP[normHeaderKey(c)] || null);
+        const hits = map.filter(Boolean).length;
+        if (hits >= 10 && map.includes("Team #")) { hdrIdx = i; colMap = map; break; }
+      }
+      if (hdrIdx === -1) return [];
+      const out = [];
+      for (let r = hdrIdx + 1; r < grid.length; r++) {
+        const obj = {};
+        colMap.forEach((h, c) => { if (h) obj[h] = grid[r][c] === undefined ? "" : grid[r][c]; });
+        out.push(obj);
+      }
+      return out;
+    }
+
+    function cleanImportedRecord(raw) {
+      const teamTypeRaw = String(raw["Team Type"] === undefined ? "" : raw["Team Type"]).trim().toUpperCase();
+      const teamType = (teamTypeRaw === "FT" || teamTypeRaw === "TT") ? teamTypeRaw : "MT";
+      const isMT = (teamType === "MT");
+      const rec = {};
+      FIELD_MAP.forEach(f => {
+        const v = raw[f.header];
+        if (f.header === "Team Type") { rec[f.header] = teamType; return; }
+        if (f.scope === "mt" && !isMT) { rec[f.header] = ""; return; }   // MT-only columns stay blank for FT/TT
+        if (f.type === "num") {
+          const n = parseInt(String(v === undefined || v === null ? "" : v).replace(/[^\d-]/g, ""), 10);
+          rec[f.header] = isNaN(n) ? 0 : Math.max(0, n);
+        } else if (f.type === "yn") {
+          const t = String(v === undefined || v === null ? "" : v).trim().toUpperCase();
+          rec[f.header] = (t === "Y" || t === "YES" || t === "TRUE" || t === "1") ? "Y" : "N";
+        } else {
+          rec[f.header] = String(v === undefined || v === null ? "" : v).trim();
+        }
+      });
+      return rec;
+    }
+
+    function sameTeamKey(r) {
+      return [r["District"], r["Tehsil"], r["UC"], String(r["Team #"] || ""), (r["Team Type"] || "MT")]
+        .map(x => String(x || "").trim().toLowerCase()).join("|");
+    }
+
+    async function handleImportFile(input) {
+      const file = input.files && input.files[0];
+      input.value = "";                    // allow re-selecting the same file later
+      if (!file) return;
+
+      let rawRows = [];
+      try {
+        const name = file.name.toLowerCase();
+        if (name.endsWith(".xlsx")) {
+          if (typeof ExcelJS === "undefined") {
+            showToast("ExcelJS library not loaded. Check connection or import a CSV instead.");
+            return;
+          }
+          const wb = new ExcelJS.Workbook();
+          await wb.xlsx.load(await file.arrayBuffer());
+          wb.worksheets.forEach(ws => {
+            const grid = [];
+            ws.eachRow({ includeEmpty: false }, (row) => {
+              const arr = [];
+              for (let c = 1; c <= row.cellCount; c++) arr.push(excelCellToValue(row.getCell(c).value));
+              grid.push(arr);
+            });
+            rawRows = rawRows.concat(gridToRawRows(grid));
+          });
+        } else if (name.endsWith(".xls")) {
+          showToast("Old .xls is not supported. Save as .xlsx or CSV and try again.");
+          return;
+        } else {
+          rawRows = gridToRawRows(parseDelimitedText(await file.text()));
+        }
+      } catch (err) {
+        showToast("Could not read file: " + (err && err.message ? err.message : "unknown error"));
+        return;
+      }
+
+      if (rawRows.length === 0) {
+        showToast("No Campaign Tally rows found. Headers must match the 47-column export.");
+        return;
+      }
+
+      // Validate + classify
+      let invalid = 0;
+      const incoming = [];
+      const seenInFile = {};
+      rawRows.forEach(raw => {
+        const rec = cleanImportedRecord(raw);
+        if (!rec["District"] || !rec["Tehsil"] || !rec["UC"] || !rec["Team #"]) { invalid++; return; }
+        const key = sameTeamKey(rec);
+        if (seenInFile[key] !== undefined) { incoming[seenInFile[key]] = rec; return; }   // later row in file wins
+        seenInFile[key] = incoming.length;
+        incoming.push(rec);
+      });
+
+      const replaceAll = !!(document.getElementById("importReplaceAll") && document.getElementById("importReplaceAll").checked);
+      const toAdd = [], toUpdate = [];
+      let same = 0;
+      incoming.forEach(rec => {
+        const existing = replaceAll ? null : savedRecords.find(r => sameTeamKey(r) === sameTeamKey(rec));
+        if (!existing) toAdd.push(rec);
+        else if (recordSignature(existing) === recordSignature(rec)) same++;
+        else toUpdate.push({ id: existing._id, rec });
+      });
+
+      if (toAdd.length === 0 && toUpdate.length === 0) {
+        showToast(`Nothing to import (${same} already saved${invalid ? ", " + invalid + " rows skipped" : ""}).`);
+        return;
+      }
+
+      const parts = [`${toAdd.length} new`, `${toUpdate.length} to update`, `${same} unchanged`];
+      if (invalid) parts.push(`${invalid} skipped (missing District/Tehsil/UC/Team #)`);
+      const replaceNote = replaceAll ? ` REPLACE MODE: all ${savedRecords.length} existing saved team(s) will be deleted first.` : "";
+      openModal(
+        replaceAll ? "Replace All Teams With Import?" : "Import Teams",
+        `File "${file.name}": ${parts.join(" • ")}.${replaceNote} Apply now?`,
+        () => {
+          const now = new Date().toISOString();
+          if (replaceAll) { savedRecords = []; exitEditModeState(); }
+          toUpdate.forEach(u => {
+            const i = savedRecords.findIndex(r => r._id === u.id);
+            if (i !== -1) savedRecords[i] = { ...u.rec, _id: u.id, _updatedAt: now };
+          });
+          // file order = oldest first (same as export), so unshift keeps the newest-first list intact
+          toAdd.forEach(rec => {
+            savedRecords.unshift({
+              ...rec,
+              _id: "rec_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+              _updatedAt: now
+            });
+          });
+          persistRecords();
+          updateRecordsUI();
+          showToast(`Imported: ${toAdd.length} added, ${toUpdate.length} updated.`);
+        }
+      );
+    }
+
     /* ========================================================================
        UTILITIES: TOAST, MODAL & HTML ESCAPING
        ======================================================================== */
@@ -4055,11 +4442,20 @@
         days.forEach(({ day, offset }) => {
           const rowIdx = startRow + offset;
           const mmpVal = Number(rec[`MMP Day ${day}`]) || 0;
-          const naVal = Number(rec[`NA Day ${day}`]) || 0;
+          // Column B = children left over from the previous campaign (SMC) for that day:
+          // SMC = NA Day - (Same Day NA Coverage + Covered in Catch UP-NA), never below 0
+          const naDay = Number(rec[`NA Day ${day}`]) || 0;
+          const sdNaDay = Number(rec[`Same Day NA Coverage Day ${day}`]) || 0;
+          const cuNaDay = Number(rec[`Covered in Catch UP-NA Day ${day}`]) || 0;
+          const naVal = Math.max(0, naDay - (sdNaDay + cuNaDay));
           const targetVal = Number(rec[`Target Day ${day}`]) || 0;
           const schoolVal = Number(rec[`Schools Coverage Day ${day}`]) || 0;
-          const houseVal = Math.max(0, targetVal - schoolVal);
-          const hhVal = Number(rec[`HH Target (Operational Sheet)-Day ${day}`]) || 0;
+          // Column E (house children) = the day's Target as entered in the Tally sheet. Schools Coverage is reported
+          // separately in column F and must NOT be subtracted (it can exceed the target, e.g. Target 35 / Schools 56).
+          const houseVal = targetVal;
+          // Column G (total households) = HH Recorded (Tally Sheet) for that day, NOT the HH Target (Operational Sheet).
+          // The G1/G2/G3 grade (column I) and the team total row are driven by this same value.
+          const hhVal = Number(rec[`HH Recorded (Tally Sheet)-Day ${day}`]) || 0;
 
           totalMMP += mmpVal;
           totalNA += naVal;
@@ -4122,13 +4518,17 @@
     const HAMLETS_ENTRIES_STORAGE_KEY = "field_microplan_entries_v1";
 
     // Reads the entries saved by the Hamlets Data Entry screen and shapes them as sheet rows
-    function getHamletSheetRows() {
+    function getHamletSheetRows(entriesOverride) {
       let entries = [];
-      try {
-        const parsed = JSON.parse(localStorage.getItem(HAMLETS_ENTRIES_STORAGE_KEY) || "[]");
-        if (Array.isArray(parsed)) entries = parsed;
-      } catch (e) {
-        entries = [];
+      if (Array.isArray(entriesOverride)) {
+        entries = entriesOverride;
+      } else {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(HAMLETS_ENTRIES_STORAGE_KEY) || "[]");
+          if (Array.isArray(parsed)) entries = parsed;
+        } catch (e) {
+          entries = [];
+        }
       }
       return entries.map(r => {
         const values = [
@@ -4141,6 +4541,102 @@
       });
     }
 
+    // Button 7 on the home screen: one Microplan workbook per Area In-Charge (every sheet filtered to that AIC), bundled in a ZIP
+    async function exportAICWiseMicroplan() {
+      if (savedRecords.length === 0) {
+        showToast("No saved team records yet. Add teams in Tally Sheet Analysis first.");
+        return;
+      }
+      if (typeof ExcelJS === "undefined") {
+        showToast("ExcelJS library not loaded. Check connection.");
+        return;
+      }
+      // Spelling-tolerant key: lower-case, only letters/digits (so "Dr. Ali  Khan" == "dr ali khan")
+      const aicKey = v => String(v == null ? "" : v).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+      const ucTeamKey = (uc, team) => aicKey(uc) + "|" + normalizeTeamKey(team);
+      const groups = new Map();   // key -> { name, records[], hamlets[] }
+      const teamToGroup = new Map();   // "uc|team" -> group key (reliable link between tally teams and hamlet rows)
+      savedRecords.forEach(r => {
+        const name = String(r["Area In-Charge"] || "").trim() || "Unassigned AIC";
+        const key = aicKey(r["Area In-Charge"]);
+        if (!groups.has(key)) groups.set(key, { name, records: [], hamlets: [] });
+        groups.get(key).records.push(r);
+        teamToGroup.set(ucTeamKey(r["UC"], r["Team #"]), key);
+      });
+
+      let allHamlets = [];
+      try {
+        const parsed = JSON.parse(localStorage.getItem(HAMLETS_ENTRIES_STORAGE_KEY) || "[]");
+        if (Array.isArray(parsed)) allHamlets = parsed;
+      } catch (e) { allHamlets = []; }
+
+      // Give every Hamlets row to exactly one AIC: first by UC + Team # (matches the tally team), else by AIC name
+      let unmatchedHamlets = 0;
+      allHamlets.forEach(e => {
+        if (!e) return;
+        let gk = teamToGroup.get(ucTeamKey(e.uc, e.team));
+        if (gk === undefined && groups.has(aicKey(e.aic))) gk = aicKey(e.aic);
+        if (gk === undefined) { unmatchedHamlets++; return; }
+        groups.get(gk).hamlets.push(e);
+      });
+
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const files = [];
+      let i = 0;
+      // Number the AICs by their teams: the AIC owning the lowest Team # is 1, and so on
+      // (e.g. an AIC with teams 1-5 is "1.", the AIC with teams 6-10 is "2."). Ties fall back to the name.
+      const minTeamNo = g => Math.min(...g.records.map(r => extractTeamNumber(r)));
+      const orderedGroups = [...groups.entries()].sort((a, b) => {
+        const ta = minTeamNo(a[1]), tb = minTeamNo(b[1]);
+        if (ta !== tb) return ta - tb;
+        return a[1].name.localeCompare(b[1].name, undefined, { sensitivity: "base", numeric: true });
+      });
+      try {
+        for (const [key, g] of orderedGroups) {
+          i++;
+          showToast(`Building AIC ${i} of ${groups.size}: ${g.name}...`);
+          const bytes = await exportExcelWorkbook({
+            includeHamlets: true,
+            returnBuffer: true,
+            skipUCMO: true,
+            records: g.records,
+            hamletEntries: g.hamlets
+          });
+          let base = g.name.replace(/[\\/:*?"<>|]+/g, "_").replace(/\s+/g, " ").trim().slice(0, 60) || "AIC";
+          const fname = `${i}. ${base}_Microplan_${dateStr}.xlsx`;   // e.g. "1. AHSAN UL MOHSIN_Microplan_2026-11-28.xlsx"
+          files.push({ name: fname, bytes });
+        }
+
+        // UCMO Summary: ONE separate file for all AICs / UCs (not repeated inside every AIC workbook)
+        showToast("Building UCMO Summary...");
+        const ucmoWb = await buildUCMOSummaryWorkbook(savedRecords);
+        files.push({ name: `UCMO_Summary_${dateStr}.xlsx`, bytes: new Uint8Array(await ucmoWb.xlsx.writeBuffer()) });
+
+        if (typeof JSZip !== "undefined") {
+          const zip = new JSZip();
+          files.forEach(f => zip.file(f.name, f.bytes));
+          const zipBytes = await zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
+          // ZIP name starts with the UC name: "<UC Name>_AIC_Wise_Microplan_<date>.zip"
+          const ucSet = new Map();
+          savedRecords.forEach(r => { const u = String(r["UC"] || "").trim(); if (u && !ucSet.has(aicKey(u))) ucSet.set(aicKey(u), u); });
+          let ucName = ucSet.size === 1 ? [...ucSet.values()][0] : (getCampaignInfo().uc || (ucSet.size > 1 ? "Multiple UCs" : ""));
+          ucName = ucName.replace(/[\\/:*?"<>|]+/g, "_").replace(/\s+/g, " ").trim().slice(0, 60);
+          const zipName = `${ucName ? ucName + "_" : ""}AIC_Wise_Microplan_${dateStr}.zip`;
+          await saveFileNativeOrWeb(zipBytes, zipName, "application/zip");
+        } else {
+          // JSZip could not load (offline): fall back to one download per AIC
+          for (const f of files) {
+            await saveFileNativeOrWeb(f.bytes, f.name, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+          }
+        }
+        showToast(`AIC Wise MP ready: ${files.length - 1} AIC workbook(s) + UCMO Summary.` +
+          (unmatchedHamlets ? ` ${unmatchedHamlets} Hamlets row(s) matched no saved team's UC + Team # or AIC and were left out.` : ""));
+      } catch (err) {
+        console.error(err);
+        showToast("Error building AIC Wise MP: " + (err.message || "Unknown error"));
+      }
+    }
+
     // Button 5 on the home screen: one workbook with all five sheets
     async function exportMicroplanWorkbook() {
       return exportExcelWorkbook({ includeHamlets: true });
@@ -4148,7 +4644,12 @@
 
     async function exportExcelWorkbook(opts) {
       const includeHamlets = !!(opts && opts.includeHamlets);
-      if (savedRecords.length === 0) {
+      // AIC-wise mode: caller passes only that AIC's records / hamlet rows and gets the bytes back instead of a download
+      const recs = (opts && Array.isArray(opts.records)) ? opts.records : savedRecords;
+      const hamletOverride = (opts && Array.isArray(opts.hamletEntries)) ? opts.hamletEntries : null;
+      const returnBuffer = !!(opts && opts.returnBuffer);
+      const skipUCMO = !!(opts && opts.skipUCMO);   // AIC-wise files: UCMO Summary is delivered as its own file
+      if (recs.length === 0) {
         showToast(includeHamlets
           ? "No saved team records yet. Add teams in Tally Sheet Analysis first."
           : "No saved team records to export.");
@@ -4169,15 +4670,15 @@
         // Rename the embedded template sheet to "Operational Sheet"
         templateOpWs.name = "Operational Sheet";
 
-        const ordered = [...savedRecords].reverse();
-        const mobileTeams = getSequentialMobileTeams(savedRecords);
+        const ordered = [...recs].reverse();
+        const mobileTeams = getSequentialMobileTeams(recs);
         const fixedTransitTeams = ordered.filter(rec => {
           const t = (rec["Team Type"] || "MT").toUpperCase();
           return t === "FT" || t === "TT";
         });
 
         // Build team/day lookup from Hamlets Data Entry records and populate "operational sheet"
-        const hamletRawEntries = getHamletSheetRows().length >= 0
+        const hamletRawEntriesAll = getHamletSheetRows().length >= 0
           ? (() => {
               try {
                 const parsed = JSON.parse(localStorage.getItem(HAMLETS_ENTRIES_STORAGE_KEY) || "[]");
@@ -4187,6 +4688,7 @@
               }
             })()
           : [];
+        const hamletRawEntries = hamletOverride || hamletRawEntriesAll;
         const hamletsByTeamDay = buildHamletsByTeamAndDay(hamletRawEntries);
         populateOperationalTemplateSheet(templateOpWs, mobileTeams, hamletsByTeamDay);
 
@@ -4205,16 +4707,16 @@
         wsFixedTransit.orderNo = 5;
 
         if (includeHamlets) {
-          const hamletRows = getHamletSheetRows();
+          const hamletRows = getHamletSheetRows(hamletOverride);
           const wsHamlets = templateWb.addWorksheet("Hamlets Data Sheet");
           populateTallyRecordsSheet(wsHamlets, hamletRows, HAMLET_SHEET_HEADERS);
           wsHamlets.orderNo = 6;
-          if (hamletRows.length === 0) {
+          if (hamletRows.length === 0 && !returnBuffer) {
             showToast("No hamlet entries found - Hamlets Data Sheet has headers only.");
           }
 
           // Sheet 5: "AIC Summary" (same Area In-Charge-wise summary as the AIC Summary Sheet button)
-          const aicWb = await buildAICSummaryWorkbook(savedRecords);
+          const aicWb = await buildAICSummaryWorkbook(recs);
           const aicSrcWs = aicWb.getWorksheet("AIC Summary") || aicWb.worksheets[0];
           const wsAIC = templateWb.addWorksheet("AIC Summary");
           copyWorksheetInto(aicSrcWs, wsAIC, { copyPageBreaks: true });
@@ -4230,14 +4732,16 @@
           });
           wsHamletsMaster.orderNo = 2;
 
-          // UCMO Summary goes in as the very first sheet, before Mobile Team
-          const ucmoBuilt = await buildUCMOSummaryWorkbook(savedRecords);
-          const wsUCMO = templateWb.addWorksheet("UCMO Summary");
-          copyWorksheetInto(ucmoBuilt.worksheets[0], wsUCMO, {
-            views: ucmoBuilt.worksheets[0].views,
-            copyPageBreaks: true
-          });
-          wsUCMO.orderNo = 0;
+          if (!skipUCMO) {
+            // UCMO Summary goes in as the very first sheet, before Mobile Team
+            const ucmoBuilt = await buildUCMOSummaryWorkbook(recs);
+            const wsUCMO = templateWb.addWorksheet("UCMO Summary");
+            copyWorksheetInto(ucmoBuilt.worksheets[0], wsUCMO, {
+              views: ucmoBuilt.worksheets[0].views,
+              copyPageBreaks: true
+            });
+            wsUCMO.orderNo = 0;
+          }
         }
 
         // Open on the first tab only (avoid several selected tabs = grouped sheets)
@@ -4248,6 +4752,7 @@
 
         const outBuffer = await templateWb.xlsx.writeBuffer();
         const dateStr = new Date().toISOString().slice(0, 10);
+        if (returnBuffer) return new Uint8Array(outBuffer);
         const fileName = includeHamlets
           ? `Microplan_Workbook_${dateStr}.xlsx`
           : `Campaign_Tally_Workbook_${dateStr}.xlsx`;
@@ -4258,6 +4763,7 @@
         );
       } catch (err) {
         console.error(err);
+        if (returnBuffer) throw err;
         showToast("Error generating Excel file: " + (err.message || "Unknown error"));
       }
     }
@@ -4383,33 +4889,78 @@
       set("hcLine2", [ci.district, ci.tehsil, ci.uc && ("UC " + ci.uc), ci.ucmo && ("UCMO: " + ci.ucmo)].filter(Boolean).join(" › "));
     }
 
-    // Pushes District / Tehsil / UC / UCMO / Area In-Charge into the tally form's admin fields
+    // Pushes District / Tehsil / UC / UCMO / Area In-Charge from Campaign Setup into the tally form.
+    // District, Tehsil, UC and UCMO are always taken from Setup and locked (change them in Campaign Setup).
+    // Area In-Charge is only pre-filled (force = overwrite) because it can differ between teams.
     function applySetupToTallyForm(force) {
+      if (typeof editingRecordId !== "undefined" && editingRecordId) return; // never touch a saved record being edited
       const ci = getCampaignInfo();
-      [["f_District", ci.district], ["f_Tehsil", ci.tehsil], ["f_UC", ci.uc], ["f_UCMO", ci.ucmo], ["f_Area_In_Charge", ci.aic]].forEach(([id, val]) => {
+      [["f_District", ci.district, true], ["f_Tehsil", ci.tehsil, true], ["f_UC", ci.uc, true],
+       ["f_UCMO", ci.ucmo, true], ["f_Area_In_Charge", ci.aic, false]].forEach(([id, val, locked]) => {
         const el = document.getElementById(id);
-        if (!el || !val) return;
-        if (force || !el.value) { el.value = val; el.dispatchEvent(new Event("input", { bubbles: true })); }
+        if (!el) return;
+        if (val) {
+          if (el.value !== val && (locked || force || !el.value)) {
+            el.value = val;
+            el.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+          if (locked) { el.readOnly = true; el.classList.add("from-setup"); }
+        } else if (locked) {
+          el.readOnly = false; el.classList.remove("from-setup");
+        }
       });
     }
 
     // Pushes the same values into the embedded Hamlets Data Entry form (field-district / -tehsil / -uc / -ucmo / -aic)
-    // mode: "all" = overwrite every field | "load" = overwrite all except AIC (keeps last-used AIC) | "fill" = only empty fields
+    // District, Tehsil, UC and UCMO are always taken from Campaign Setup and locked (read-only).
+    // Area In-Charge is only pre-filled, because it can differ between teams:
+    // mode: "all" = overwrite AIC too | "load" / "fill" = only fill AIC when it is empty
     function applySetupToHamletsForm(mode) {
       const frame = document.getElementById("hamletsFrame");
       let doc = null;
       try { doc = frame && frame.contentDocument; } catch (e) { return; }
       if (!doc || !doc.getElementById("field-district")) return;
       const ci = getCampaignInfo();
-      [["field-district", "district"], ["field-tehsil", "tehsil"], ["field-uc", "uc"], ["field-ucmo", "ucmo"], ["field-aic", "aic"]].forEach(([id, key]) => {
+
+      // one-time: lock styling + hint line + hooks so Reset / Cancel Edit re-apply Setup values
+      if (!doc.getElementById("setup-lock-style")) {
+        const st = doc.createElement("style");
+        st.id = "setup-lock-style";
+        st.textContent = ".from-setup{background:#f1f5f9 !important;color:#334155 !important;cursor:not-allowed;font-weight:600;}";
+        doc.head.appendChild(st);
+        const hintHost = doc.getElementById("retain-hint");
+        if (hintHost && hintHost.parentElement) {
+          const p = doc.createElement("p");
+          p.className = "text-xs text-slate-500";
+          p.innerHTML = 'District, Tehsil, UC &amp; UCMO are taken from Campaign Setup. <button type="button" id="goto-setup-btn" class="font-semibold text-brand-700 underline">Change in Campaign Setup</button>';
+          hintHost.parentElement.insertAdjacentElement("afterend", p);
+          const gb = doc.getElementById("goto-setup-btn");
+          if (gb) gb.addEventListener("click", () => editCampaignSetup());
+        }
+        ["reset-form-btn", "cancel-edit-btn"].forEach(id => {
+          const b = doc.getElementById(id);
+          if (b) b.addEventListener("click", () => setTimeout(() => applySetupToHamletsForm("fill"), 0));
+        });
+      }
+
+      // while a saved row is being edited, leave its own values alone
+      const cancelBtn = doc.getElementById("cancel-edit-btn");
+      const editingRow = !!(cancelBtn && !cancelBtn.classList.contains("hidden"));
+      const fire = (el) => el.dispatchEvent(new doc.defaultView.Event("input", { bubbles: true }));
+
+      [["field-district", "district"], ["field-tehsil", "tehsil"], ["field-uc", "uc"], ["field-ucmo", "ucmo"]].forEach(([id, key]) => {
         const el = doc.getElementById(id), val = ci[key];
-        if (!el || !val) return;
-        const overwrite = mode === "all" || (mode === "load" && key !== "aic");
-        if (overwrite || !el.value) {
-          el.value = val;
-          el.dispatchEvent(new doc.defaultView.Event("input", { bubbles: true }));
+        if (!el) return;
+        if (val) {
+          if (!editingRow && el.value !== val) { el.value = val; fire(el); }
+          el.readOnly = true; el.classList.add("from-setup"); el.title = "From Campaign Setup";
+        } else {
+          el.readOnly = false; el.classList.remove("from-setup"); el.title = "";
         }
       });
+
+      const aic = doc.getElementById("field-aic");
+      if (aic && ci.aic && !editingRow && (mode === "all" || !aic.value)) { aic.value = ci.aic; fire(aic); }
     }
 
     function submitCampaignSetup() {
@@ -4530,6 +5081,8 @@
             ftCov: 0,
             ttCov: 0,
             naTotal: 0,
+            sdNaCov: 0,
+            smcTotal: 0,
             schoolsCov: 0,
             zeroDose: 0,
             cuCov: 0,
@@ -4576,6 +5129,9 @@
           g.naTotal += (Number(r["NA Day 1"]) || 0) +
                        (Number(r["NA Day 2"]) || 0) +
                        (Number(r["NA Day 3"]) || 0);
+          g.sdNaCov += (Number(r["Same Day NA Coverage Day 1"]) || 0) +
+                       (Number(r["Same Day NA Coverage Day 2"]) || 0) +
+                       (Number(r["Same Day NA Coverage Day 3"]) || 0);
           g.schoolsCov += (Number(r["Schools Coverage Day 1"]) || 0) +
                           (Number(r["Schools Coverage Day 2"]) || 0) +
                           (Number(r["Schools Coverage Day 3"]) || 0);
@@ -4586,6 +5142,9 @@
           g.cuTarget += Number(r["Target Catch-UP Day 1"]) || 0;
         }
       });
+
+      // SMC (Remaining) = Total NA (D1-3) - Same-Day NA Cov (D1-3) - Catch-Up Cov, summed over all teams & days of the AIC
+      map.forEach(g => { g.smcTotal = Math.max(0, g.naTotal - g.sdNaCov - g.cuCov); });
 
       return Array.from(map.values());
     }
@@ -4648,11 +5207,7 @@
       writeReviewCell(ws, `A${r(1)}`, ci.review);                   // Review date (A1:D2)
 
       // Row 7: Recorded / Covered Children & HH Summary
-      ws.getCell(`A${r(7)}`).value = totalChildrenCov;
-      ws.getCell(`C${r(7)}`).value = aicData.ftCov;
-      ws.getCell(`G${r(7)}`).value = aicData.ttCov;
-      ws.getCell(`L${r(7)}`).value = aicData.schoolsCov;
-      ws.getCell(`P${r(7)}`).value = aicData.mtTarget;
+      // A7, C7, G7, L7, P7 (yellow cells) are intentionally left blank
       ws.getCell(`R${r(7)}`).value = aicData.hhTarget;
 
       // Row 9: Target / Planned Children & HH Summary
@@ -4671,7 +5226,7 @@
       ws.getCell(`R${r(11)}`).value = aicData.mtCount;
 
       // Row 15, 18, 19: Missed (NA), Zero Dose, Migrant & Mobile Population
-      ws.getCell(`A${r(15)}`).value = aicData.naTotal;
+      ws.getCell(`A${r(15)}`).value = aicData.smcTotal;   // SMC (remaining missed children)
       ws.getCell(`A${r(18)}`).value = aicData.zeroDose;
       ws.getCell(`R${r(19)}`).value = aicData.mmpTarget;
     }
@@ -5092,7 +5647,7 @@
           hhTarget: 0, hhRec: 0, mmpTarget: 0,
           ftCov: 0, ttCov: 0, schoolsCov: 0,
           totalChildrenCov: 0, totalChildrenTar: 0, houseChildrenCov: 0, houseChildrenTar: 0, mtTarget: 0,
-          naTotal: 0, zeroDose: 0
+          naTotal: 0, smcTotal: 0, zeroDose: 0
         };
         aicGroups.forEach(a => {
           if (!g.district && a.district) g.district = String(a.district).trim();
@@ -5101,7 +5656,7 @@
           g.mtCount += a.mtCount; g.ftCount += a.ftCount; g.ttCount += a.ttCount;
           g.hhTarget += a.hhTarget; g.hhRec += a.hhRec; g.mmpTarget += a.mmpTarget;
           g.ftCov += a.ftCov; g.ttCov += a.ttCov; g.schoolsCov += a.schoolsCov;
-          g.naTotal += a.naTotal; g.zeroDose += a.zeroDose;
+          g.naTotal += a.naTotal; g.smcTotal += a.smcTotal; g.zeroDose += a.zeroDose;
           // same formulas as fillAICSummaryBlock, summed AIC by AIC
           g.houseChildrenCov += Math.max(0, a.mtCov - a.schoolsCov);
           g.houseChildrenTar += Math.max(0, a.mtTarget - a.schoolsCov);
@@ -5133,11 +5688,7 @@
       if (g.aicCount) ws.getCell(`R${r(6)}`).value = g.aicCount;                // Total Area In-charges
 
       // Row 8: previous campaign - recorded / covered children & HH
-      ws.getCell(`A${r(8)}`).value = g.totalChildrenCov;                        // Total children
-      ws.getCell(`C${r(8)}`).value = g.ftCov;                                   // Fixed site
-      ws.getCell(`G${r(8)}`).value = g.ttCov;                                   // Transit point
-      ws.getCell(`L${r(8)}`).value = g.schoolsCov;                              // Schools / madaris
-      ws.getCell(`P${r(8)}`).value = g.mtTarget;                        // Household children
+      // A8, C8, G8, L8, P8 (yellow cells) are intentionally left blank
       ws.getCell(`R${r(8)}`).value = g.hhTarget;                                   // Total HH
 
       // Row 10: current campaign planning - target / planned children & HH
@@ -5164,7 +5715,7 @@
       ws.getCell(`R${r(12)}`).value = { formula: `SUM(A${r(10)}*1.11)`, result: g.totalChildrenTar * 1.11 };
 
       // Rows 16, 19, 20: missed (NA) children, zero-dose children, migrant & mobile population
-      ws.getCell(`A${r(16)}`).value = g.naTotal;
+      ws.getCell(`A${r(16)}`).value = g.smcTotal;   // SMC = sum of all AICs' SMC (all teams, all days)
       ws.getCell(`A${r(19)}`).value = g.zeroDose;
       ws.getCell(`R${r(20)}`).value = g.mmpTarget;
     }
